@@ -1,0 +1,39 @@
+{
+  "name": "hls-ts",
+  "version": "0.1.0",
+  "description": "HLS TS parser library in Javascript",
+  "main": "index.js",
+  "scripts": {
+    "test": "$(npm bin)/karma start karma.conf.js",
+    "coveralls": "cat ./coverage/lcov.info | coveralls",
+    "clean": "rm -rf dist/*",
+    "prebuild": "npm run clean && npm run test",
+    "build": "browserify index.js -o dist/hls-ts.js -t [ babelify --presets es2015 ] && $(npm bin)/uglifyjs dist/hls-ts.js -o dist/hls-ts.min.js",
+    "version": "npm run build && git add -A dist",
+    "postversion": "git push && git push --tags"
+  },
+  "author": "Jonas Birme <jonas.birme@eyevinn.se> (http://eyevinn.github.io)",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-plugin-espower": "^2.3.1",
+    "babel-polyfill": "^6.20.0",
+    "babel-preset-es2015": "^6.18.0",
+    "babelify": "^7.3.0",
+    "browserify": "^13.1.1",
+    "browserify-istanbul": "^2.0.0",
+    "coveralls": "^2.11.15",
+    "jasmine": "^2.5.2",
+    "jasmine-jquery": "^2.1.1",
+    "jsdoc": "^3.4.3",
+    "karma": "^1.3.0",
+    "karma-browserify": "^5.1.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-coverage": "^1.1.1",
+    "karma-generic-preprocessor": "^1.1.0",
+    "karma-jasmine": "^1.1.0",
+    "karma-jasmine-jquery": "^0.1.1",
+    "minami": "^1.1.1",
+    "request": "^2.79.0",
+    "watchify": "^3.8.0"
+  }
+}

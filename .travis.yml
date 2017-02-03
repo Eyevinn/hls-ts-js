@@ -1,0 +1,23 @@
+sudo: required
+dist: trusty
+language: node_js
+node_js:
+- '6'
+before_script:
+- export CHROME_BIN=/usr/bin/google-chrome
+- export DISPLAY=:99.0
+- sh -e /etc/init.d/xvfb start
+- sudo apt-get update
+- sudo apt-get install -y libappindicator1 fonts-liberation
+- wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+- sudo dpkg -i google-chrome*.deb
+after_success:
+- npm run coveralls
+deploy:
+  provider: npm
+  email: jonas.birme@eyevinn.se
+  api_key:
+    secure: CYbY7E+a3eJpwk7b/XtkCNe3zFUSMZZdeS6ssM8y39gfi+FLZHsB9AwqUsU/F3ZrpWea1nmmhgKooa9c3Vn3+s804rvM69FK5ajYRR7IPEEmDC5WXqwyVaEf3E2qO6PoSnzKGAgv9CgYc3R2CUhg+0HzVQjNcCxsmeVYJpt2yzZVXydzKSeH4m9XlozzEisU6pKyNsILmxvumBnbXSAsTC866mcwKqZrKxL3S60/Q9MDO1EFLhwqV1pmCq54wvgRxQIj9SJPKB//FW3PH/EVs5r8BGhMDi5pzsIczrLnHwJvw1I1Bmk53Ba0J69xGcn9i4V2JrfIAb+5s3tFS8nDSXKyPQqDtx/ux1EilOfP3ZjS3Md3cQGPcJ7BIyzD9RVC+2cGJh95H7CFOhp8MivYIr4dvrvfB6n0jp/CAfxYf39F4PxTTJOKLTP+nMfWSFsB8A0DRQdKfskQP7pa6YdjAp+49YKbK9CVEsI1HV3Jjfy+YURqgJnuVGgSfOUwcG6CJshB7I9FCy2JIHfsxquKPHRgBAr5Qg5HFBTeBtwz/IywoaOfdSPMYLSv15coLXa2hSVSQBdgLoiN78NUVAh9gR8pzF4v0TQrxgj1r7kbBwD/rgWwwoo8SO/cOgQ2S0fQuKapzRFh+0nxOIKfRf161rRVepHRmOD6/HQtqy7B0CM=
+  on:
+    tags: true
+    repo: Eyevinn/hls-ts-js
