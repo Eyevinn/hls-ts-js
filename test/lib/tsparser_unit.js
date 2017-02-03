@@ -1,5 +1,5 @@
-const TSParser = require("../lib/tsparser.js");
-const TestAssetsModule = require("./support/testassets.js");
+const TSParser = require("../../lib/tsparser.js");
+const TestAssetsModule = require("../support/testassets.js");
 
 describe("TS Parser", () => {
   let testAssetsModule;

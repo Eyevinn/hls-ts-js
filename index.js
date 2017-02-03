@@ -1,10 +1,9 @@
-// Copyright 2017 Eyevinn Technology. All rights reserved
-// Use of this source code is governed by a MIT License
-// license that can be found in the LICENSE file.
-// Author: Jonas Birme (Eyevinn Technology)
+const ParseStream = require("./lib/parse_stream.js");
 
-const HlsTS = function constructor() {
-
+const HlsTS = {
+  parse: function(opts) {
+    return new ParseStream(opts);
+  }
 };
 
 module.exports = HlsTS;
