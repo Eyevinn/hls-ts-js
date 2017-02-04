@@ -17,6 +17,12 @@ const HlsTS = {
       throw new Error("Nothing parsed yet");
     }
     return this.streamParser.getPackets();    
+  },
+  get tracks() {
+    if (!this.streamParser) {
+      throw new Error("Nothing parsed yet");
+    }
+    return this.streamParser.getTracks();    
   }
 };
 
