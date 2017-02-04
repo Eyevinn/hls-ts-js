@@ -4,7 +4,7 @@ const ParseStream = require("./lib/parse_stream.js");
 const HlsTS = {
   streamParser: undefined,
   parse: function(opts) {
-    if (opts.debug) {
+    if (opts && opts.debug) {
       Logger.setLogLevel("DEBUG");            
     } else {
       Logger.setLogLevel("INFO");
