@@ -1,15 +1,22 @@
 const Logger = require("logplease");
 const ParseStream = require("./lib/parse_stream.js");
 
-if (process.env.DEBUG) {
-  Logger.setLogLevel("DEBUG");
-} else {
-  Logger.setLogLevel("INFO");
-}
-
 const HlsTS = {
+  streamParser: undefined,
   parse: function(opts) {
-    return new ParseStream(opts);
+    if (opts.debug) {
+      Logger.setLogLevel("DEBUG");            
+    } else {
+      Logger.setLogLevel("INFO");
+    }
+    this.streamParser = new ParseStream(opts);
+    return this.streamParser;
+  },
+  get packets() {
+    if (!this.streamParser) {
+      throw new Error("Nothing parsed yet");
+    }
+    return this.streamParser.getPackets();    
   }
 };
 
