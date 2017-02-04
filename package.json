@@ -37,7 +37,6 @@
     "watchify": "^3.8.0"
   },
   "dependencies": {
-    "pullstream": "^1.0.0",
-    "readable-stream": "^2.2.2"
+    "logplease": "^1.2.12"
   }
 }

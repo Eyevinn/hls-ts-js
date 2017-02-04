@@ -11,16 +11,16 @@ describe("TS Parser", () => {
 
   it("can verify that a correct TS file is correct", () => {
     const asset = testAssetsModule.getAssetByName("seg-10s");
-    const parser = new TSParser(asset.data);
-    const isValid = parser.isValid();
+    const parser = new TSParser();
+    const isValid = parser.isValidChunk(asset.data);
     expect(isValid).toBe(true);
   });
 
   it("can verify that a correct TS file is incorrect", () => {
     const asset = testAssetsModule.getAssetByName("seg-10s");
     asset.data[0] = 0x48;
-    const parser = new TSParser(asset.data);
-    const isValid = parser.isValid();
+    const parser = new TSParser();
+    const isValid = parser.isValidChunk(asset.data);
     expect(isValid).toBe(false);
   });
 });
