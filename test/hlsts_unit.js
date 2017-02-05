@@ -13,7 +13,7 @@ describe("Hls TS", () => {
       const avcData = hlsTs.getDataStreamByProgramType("avc");
       expect(programs.length).toBe(3);
       expect(avcPackets.length).toBe(avcProgram.packets);
-      expect(avcData.data.length).toBe(881030);
+      expect(avcData.data.length).toBe(785174);
       expect(avcData.size).toBe(avcData.data.length);
       done(); 
     });

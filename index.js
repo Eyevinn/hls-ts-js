@@ -16,7 +16,7 @@ const HlsTS = {
     if (!this.streamParser) {
       throw new Error("Nothing parsed yet");
     }
-    return this.streamParser.getPrograms().getPrograms();    
+    return this.streamParser.getPrograms().getTypes();    
   },
   getPacketsByProgramType(type) {
     if (!this.streamParser) {
