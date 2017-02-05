@@ -1,6 +1,6 @@
 {
   "name": "hls-ts",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "HLS TS parser library in Javascript",
   "main": "index.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "clean": "rm -rf dist/*",
     "prebuild": "npm run clean && npm run test",
     "build": "browserify index.js -o dist/hls-ts.js -t [ babelify --presets es2015 ] && $(npm bin)/uglifyjs dist/hls-ts.js -o dist/hls-ts.min.js",
-    "version": "npm run build && git add -A dist",
+    "version": "git add -A dist",
     "postversion": "git push && git push --tags"
   },
   "author": "Jonas Birme <jonas.birme@eyevinn.se> (http://eyevinn.github.io)",
