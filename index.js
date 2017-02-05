@@ -23,6 +23,12 @@ const HlsTS = {
       throw new Error("Nothing parsed yet");
     }
     return this.streamParser.getPrograms().getPackets(type);    
+  },
+  getDataStreamByProgramType(type) {
+    if (!this.streamParser) {
+      throw new Error("Nothing parsed yet");
+    }
+    return this.streamParser.getPrograms().getDataStream(type);    
   }
 };
 

@@ -9,4 +9,6 @@ fs.createReadStream("./test/support/testassets/seg2-10s.ts")
   const packets = hlsTs.getPacketsByProgramType(programs[0].type);
   console.log(programs[0].type + ":" + packets.length + " packets");
   console.log(programs[0].type + ":" + packets.filter(p => p.payloadUnitStartIndicator).length + " packets with payload");
+  const dataStream = hlsTs.getDataStreamByProgramType(programs[0].type);
+  console.log(programs[0].type + ":" + dataStream.data.length + " bytes");
 });
