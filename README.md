@@ -26,7 +26,7 @@ request.get("http://example.com/seg10.ts")
   // Obtain the payload for a program stream
   const avcPayload = hlsTs.getDataStreamByProgramType("avc");
 
-  // where avcPayload is a Uint8Array
+  // where avcPayload.data is a Uint8Array
 });
 ```
 
