@@ -28,6 +28,8 @@ TestAssets.prototype.init = function() {
   return new Promise((resolve, reject) => {
     loadAsset("seg-10s.ts").then((data) => {
       this.assets.push({ name: "seg-10s", data: data });
+      return loadAsset("seg2-10s.ts");
+    }).then((data) => {
       this.assets.push({ name: "seg2-10s", data: data });
       resolve();
     }).catch((err) => {
