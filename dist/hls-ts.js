@@ -611,29 +611,29 @@ var util = {
 module.exports = util;
 
 },{}],6:[function(require,module,exports){
-'use strict'
+'use strict';
 
-exports.byteLength = byteLength
-exports.toByteArray = toByteArray
-exports.fromByteArray = fromByteArray
+exports.byteLength = byteLength;
+exports.toByteArray = toByteArray;
+exports.fromByteArray = fromByteArray;
 
-var lookup = []
-var revLookup = []
-var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array
+var lookup = [];
+var revLookup = [];
+var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array;
 
-var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 for (var i = 0, len = code.length; i < len; ++i) {
-  lookup[i] = code[i]
-  revLookup[code.charCodeAt(i)] = i
+  lookup[i] = code[i];
+  revLookup[code.charCodeAt(i)] = i;
 }
 
-revLookup['-'.charCodeAt(0)] = 62
-revLookup['_'.charCodeAt(0)] = 63
+revLookup['-'.charCodeAt(0)] = 62;
+revLookup['_'.charCodeAt(0)] = 63;
 
-function placeHoldersCount (b64) {
-  var len = b64.length
+function placeHoldersCount(b64) {
+  var len = b64.length;
   if (len % 4 > 0) {
-    throw new Error('Invalid string. Length must be a multiple of 4')
+    throw new Error('Invalid string. Length must be a multiple of 4');
   }
 
   // the number of equal signs (place holders)
@@ -641,89 +641,89 @@ function placeHoldersCount (b64) {
   // represent one byte
   // if there is only one, then the three characters before it represent 2 bytes
   // this is just a cheap hack to not do indexOf twice
-  return b64[len - 2] === '=' ? 2 : b64[len - 1] === '=' ? 1 : 0
+  return b64[len - 2] === '=' ? 2 : b64[len - 1] === '=' ? 1 : 0;
 }
 
-function byteLength (b64) {
+function byteLength(b64) {
   // base64 is 4/3 + up to two characters of the original data
-  return b64.length * 3 / 4 - placeHoldersCount(b64)
+  return b64.length * 3 / 4 - placeHoldersCount(b64);
 }
 
-function toByteArray (b64) {
-  var i, j, l, tmp, placeHolders, arr
-  var len = b64.length
-  placeHolders = placeHoldersCount(b64)
+function toByteArray(b64) {
+  var i, j, l, tmp, placeHolders, arr;
+  var len = b64.length;
+  placeHolders = placeHoldersCount(b64);
 
-  arr = new Arr(len * 3 / 4 - placeHolders)
+  arr = new Arr(len * 3 / 4 - placeHolders);
 
   // if there are placeholders, only get up to the last complete 4 chars
-  l = placeHolders > 0 ? len - 4 : len
+  l = placeHolders > 0 ? len - 4 : len;
 
-  var L = 0
+  var L = 0;
 
   for (i = 0, j = 0; i < l; i += 4, j += 3) {
-    tmp = (revLookup[b64.charCodeAt(i)] << 18) | (revLookup[b64.charCodeAt(i + 1)] << 12) | (revLookup[b64.charCodeAt(i + 2)] << 6) | revLookup[b64.charCodeAt(i + 3)]
-    arr[L++] = (tmp >> 16) & 0xFF
-    arr[L++] = (tmp >> 8) & 0xFF
-    arr[L++] = tmp & 0xFF
+    tmp = revLookup[b64.charCodeAt(i)] << 18 | revLookup[b64.charCodeAt(i + 1)] << 12 | revLookup[b64.charCodeAt(i + 2)] << 6 | revLookup[b64.charCodeAt(i + 3)];
+    arr[L++] = tmp >> 16 & 0xFF;
+    arr[L++] = tmp >> 8 & 0xFF;
+    arr[L++] = tmp & 0xFF;
   }
 
   if (placeHolders === 2) {
-    tmp = (revLookup[b64.charCodeAt(i)] << 2) | (revLookup[b64.charCodeAt(i + 1)] >> 4)
-    arr[L++] = tmp & 0xFF
+    tmp = revLookup[b64.charCodeAt(i)] << 2 | revLookup[b64.charCodeAt(i + 1)] >> 4;
+    arr[L++] = tmp & 0xFF;
   } else if (placeHolders === 1) {
-    tmp = (revLookup[b64.charCodeAt(i)] << 10) | (revLookup[b64.charCodeAt(i + 1)] << 4) | (revLookup[b64.charCodeAt(i + 2)] >> 2)
-    arr[L++] = (tmp >> 8) & 0xFF
-    arr[L++] = tmp & 0xFF
+    tmp = revLookup[b64.charCodeAt(i)] << 10 | revLookup[b64.charCodeAt(i + 1)] << 4 | revLookup[b64.charCodeAt(i + 2)] >> 2;
+    arr[L++] = tmp >> 8 & 0xFF;
+    arr[L++] = tmp & 0xFF;
   }
 
-  return arr
+  return arr;
 }
 
-function tripletToBase64 (num) {
-  return lookup[num >> 18 & 0x3F] + lookup[num >> 12 & 0x3F] + lookup[num >> 6 & 0x3F] + lookup[num & 0x3F]
+function tripletToBase64(num) {
+  return lookup[num >> 18 & 0x3F] + lookup[num >> 12 & 0x3F] + lookup[num >> 6 & 0x3F] + lookup[num & 0x3F];
 }
 
-function encodeChunk (uint8, start, end) {
-  var tmp
-  var output = []
+function encodeChunk(uint8, start, end) {
+  var tmp;
+  var output = [];
   for (var i = start; i < end; i += 3) {
-    tmp = (uint8[i] << 16) + (uint8[i + 1] << 8) + (uint8[i + 2])
-    output.push(tripletToBase64(tmp))
+    tmp = (uint8[i] << 16) + (uint8[i + 1] << 8) + uint8[i + 2];
+    output.push(tripletToBase64(tmp));
   }
-  return output.join('')
+  return output.join('');
 }
 
-function fromByteArray (uint8) {
-  var tmp
-  var len = uint8.length
-  var extraBytes = len % 3 // if we have 1 byte left, pad 2 bytes
-  var output = ''
-  var parts = []
-  var maxChunkLength = 16383 // must be multiple of 3
+function fromByteArray(uint8) {
+  var tmp;
+  var len = uint8.length;
+  var extraBytes = len % 3; // if we have 1 byte left, pad 2 bytes
+  var output = '';
+  var parts = [];
+  var maxChunkLength = 16383; // must be multiple of 3
 
   // go through the array every three bytes, we'll deal with trailing stuff later
   for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
-    parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)))
+    parts.push(encodeChunk(uint8, i, i + maxChunkLength > len2 ? len2 : i + maxChunkLength));
   }
 
   // pad the end with zeros, but make sure to not forget the extra bytes
   if (extraBytes === 1) {
-    tmp = uint8[len - 1]
-    output += lookup[tmp >> 2]
-    output += lookup[(tmp << 4) & 0x3F]
-    output += '=='
+    tmp = uint8[len - 1];
+    output += lookup[tmp >> 2];
+    output += lookup[tmp << 4 & 0x3F];
+    output += '==';
   } else if (extraBytes === 2) {
-    tmp = (uint8[len - 2] << 8) + (uint8[len - 1])
-    output += lookup[tmp >> 10]
-    output += lookup[(tmp >> 4) & 0x3F]
-    output += lookup[(tmp << 2) & 0x3F]
-    output += '='
+    tmp = (uint8[len - 2] << 8) + uint8[len - 1];
+    output += lookup[tmp >> 10];
+    output += lookup[tmp >> 4 & 0x3F];
+    output += lookup[tmp << 2 & 0x3F];
+    output += '=';
   }
 
-  parts.push(output)
+  parts.push(output);
 
-  return parts.join('')
+  return parts.join('');
 }
 
 },{}],7:[function(require,module,exports){
@@ -767,7 +767,7 @@ exports.alloc = function alloc(size, fill, encoding) {
     buf.fill(_fill);
   }
   return buf;
-}
+};
 exports.allocUnsafe = function allocUnsafe(size) {
   if (typeof Buffer.allocUnsafe === 'function') {
     return Buffer.allocUnsafe(size);
@@ -779,7 +779,7 @@ exports.allocUnsafe = function allocUnsafe(size) {
     throw new RangeError('size is too large');
   }
   return new Buffer(size);
-}
+};
 exports.from = function from(value, encodingOrOffset, length) {
   if (typeof Buffer.from === 'function' && (!global.Uint8Array || Uint8Array.from !== Buffer.from)) {
     return Buffer.from(value, encodingOrOffset, length);
@@ -816,7 +816,7 @@ exports.from = function from(value, encodingOrOffset, length) {
     return out;
   }
   if (value) {
-    if (Array.isArray(value) || (typeof ArrayBuffer !== 'undefined' && value.buffer instanceof ArrayBuffer) || 'length' in value) {
+    if (Array.isArray(value) || typeof ArrayBuffer !== 'undefined' && value.buffer instanceof ArrayBuffer || 'length' in value) {
       return new Buffer(value);
     }
     if (value.type === 'Buffer' && Array.isArray(value.data)) {
@@ -825,7 +825,7 @@ exports.from = function from(value, encodingOrOffset, length) {
   }
 
   throw new TypeError('First argument must be a string, Buffer, ' + 'ArrayBuffer, Array, or array-like object.');
-}
+};
 exports.allocUnsafeSlow = function allocUnsafeSlow(size) {
   if (typeof Buffer.allocUnsafeSlow === 'function') {
     return Buffer.allocUnsafeSlow(size);
@@ -837,7 +837,7 @@ exports.allocUnsafeSlow = function allocUnsafeSlow(size) {
     throw new RangeError('size is too large');
   }
   return new SlowBuffer(size);
-}
+};
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"buffer":9}],9:[function(require,module,exports){
@@ -2635,6 +2635,10 @@ function isnan (val) {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"base64-js":6,"ieee754":12,"isarray":15}],10:[function(require,module,exports){
 (function (Buffer){
+'use strict';
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -2693,7 +2697,7 @@ function isString(arg) {
 exports.isString = isString;
 
 function isSymbol(arg) {
-  return typeof arg === 'symbol';
+  return (typeof arg === 'undefined' ? 'undefined' : _typeof(arg)) === 'symbol';
 }
 exports.isSymbol = isSymbol;
 
@@ -2708,7 +2712,7 @@ function isRegExp(re) {
 exports.isRegExp = isRegExp;
 
 function isObject(arg) {
-  return typeof arg === 'object' && arg !== null;
+  return (typeof arg === 'undefined' ? 'undefined' : _typeof(arg)) === 'object' && arg !== null;
 }
 exports.isObject = isObject;
 
@@ -2718,7 +2722,7 @@ function isDate(d) {
 exports.isDate = isDate;
 
 function isError(e) {
-  return (objectToString(e) === '[object Error]' || e instanceof Error);
+  return objectToString(e) === '[object Error]' || e instanceof Error;
 }
 exports.isError = isError;
 
@@ -2728,12 +2732,8 @@ function isFunction(arg) {
 exports.isFunction = isFunction;
 
 function isPrimitive(arg) {
-  return arg === null ||
-         typeof arg === 'boolean' ||
-         typeof arg === 'number' ||
-         typeof arg === 'string' ||
-         typeof arg === 'symbol' ||  // ES6 symbol
-         typeof arg === 'undefined';
+  return arg === null || typeof arg === 'boolean' || typeof arg === 'number' || typeof arg === 'string' || (typeof arg === 'undefined' ? 'undefined' : _typeof(arg)) === 'symbol' || // ES6 symbol
+  typeof arg === 'undefined';
 }
 exports.isPrimitive = isPrimitive;
 
@@ -3049,96 +3049,100 @@ function isUndefined(arg) {
 }
 
 },{}],12:[function(require,module,exports){
+"use strict";
+
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
-  var e, m
-  var eLen = nBytes * 8 - mLen - 1
-  var eMax = (1 << eLen) - 1
-  var eBias = eMax >> 1
-  var nBits = -7
-  var i = isLE ? (nBytes - 1) : 0
-  var d = isLE ? -1 : 1
-  var s = buffer[offset + i]
+  var e, m;
+  var eLen = nBytes * 8 - mLen - 1;
+  var eMax = (1 << eLen) - 1;
+  var eBias = eMax >> 1;
+  var nBits = -7;
+  var i = isLE ? nBytes - 1 : 0;
+  var d = isLE ? -1 : 1;
+  var s = buffer[offset + i];
 
-  i += d
+  i += d;
 
-  e = s & ((1 << (-nBits)) - 1)
-  s >>= (-nBits)
-  nBits += eLen
+  e = s & (1 << -nBits) - 1;
+  s >>= -nBits;
+  nBits += eLen;
   for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8) {}
 
-  m = e & ((1 << (-nBits)) - 1)
-  e >>= (-nBits)
-  nBits += mLen
+  m = e & (1 << -nBits) - 1;
+  e >>= -nBits;
+  nBits += mLen;
   for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8) {}
 
   if (e === 0) {
-    e = 1 - eBias
+    e = 1 - eBias;
   } else if (e === eMax) {
-    return m ? NaN : ((s ? -1 : 1) * Infinity)
+    return m ? NaN : (s ? -1 : 1) * Infinity;
   } else {
-    m = m + Math.pow(2, mLen)
-    e = e - eBias
+    m = m + Math.pow(2, mLen);
+    e = e - eBias;
   }
-  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
-}
+  return (s ? -1 : 1) * m * Math.pow(2, e - mLen);
+};
 
 exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
-  var e, m, c
-  var eLen = nBytes * 8 - mLen - 1
-  var eMax = (1 << eLen) - 1
-  var eBias = eMax >> 1
-  var rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0)
-  var i = isLE ? 0 : (nBytes - 1)
-  var d = isLE ? 1 : -1
-  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
+  var e, m, c;
+  var eLen = nBytes * 8 - mLen - 1;
+  var eMax = (1 << eLen) - 1;
+  var eBias = eMax >> 1;
+  var rt = mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0;
+  var i = isLE ? 0 : nBytes - 1;
+  var d = isLE ? 1 : -1;
+  var s = value < 0 || value === 0 && 1 / value < 0 ? 1 : 0;
 
-  value = Math.abs(value)
+  value = Math.abs(value);
 
   if (isNaN(value) || value === Infinity) {
-    m = isNaN(value) ? 1 : 0
-    e = eMax
+    m = isNaN(value) ? 1 : 0;
+    e = eMax;
   } else {
-    e = Math.floor(Math.log(value) / Math.LN2)
+    e = Math.floor(Math.log(value) / Math.LN2);
     if (value * (c = Math.pow(2, -e)) < 1) {
-      e--
-      c *= 2
+      e--;
+      c *= 2;
     }
     if (e + eBias >= 1) {
-      value += rt / c
+      value += rt / c;
     } else {
-      value += rt * Math.pow(2, 1 - eBias)
+      value += rt * Math.pow(2, 1 - eBias);
     }
     if (value * c >= 2) {
-      e++
-      c /= 2
+      e++;
+      c /= 2;
     }
 
     if (e + eBias >= eMax) {
-      m = 0
-      e = eMax
+      m = 0;
+      e = eMax;
     } else if (e + eBias >= 1) {
-      m = (value * c - 1) * Math.pow(2, mLen)
-      e = e + eBias
+      m = (value * c - 1) * Math.pow(2, mLen);
+      e = e + eBias;
     } else {
-      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen)
-      e = 0
+      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen);
+      e = 0;
     }
   }
 
   for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
 
-  e = (e << mLen) | m
-  eLen += mLen
+  e = e << mLen | m;
+  eLen += mLen;
   for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
 
-  buffer[offset + i - d] |= s * 128
-}
+  buffer[offset + i - d] |= s * 128;
+};
 
 },{}],13:[function(require,module,exports){
+'use strict';
+
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
-    ctor.super_ = superCtor
+    ctor.super_ = superCtor;
     ctor.prototype = Object.create(superCtor.prototype, {
       constructor: {
         value: ctor,
@@ -3151,15 +3155,17 @@ if (typeof Object.create === 'function') {
 } else {
   // old school shim for old browsers
   module.exports = function inherits(ctor, superCtor) {
-    ctor.super_ = superCtor
-    var TempCtor = function () {}
-    TempCtor.prototype = superCtor.prototype
-    ctor.prototype = new TempCtor()
-    ctor.prototype.constructor = ctor
-  }
+    ctor.super_ = superCtor;
+    var TempCtor = function TempCtor() {};
+    TempCtor.prototype = superCtor.prototype;
+    ctor.prototype = new TempCtor();
+    ctor.prototype.constructor = ctor;
+  };
 }
 
 },{}],14:[function(require,module,exports){
+'use strict';
+
 /*!
  * Determine if an object is a Buffer
  *
@@ -3170,19 +3176,21 @@ if (typeof Object.create === 'function') {
 // The _isBuffer check is for Safari 5-7 support, because it's missing
 // Object.prototype.constructor. Remove this eventually
 module.exports = function (obj) {
-  return obj != null && (isBuffer(obj) || isSlowBuffer(obj) || !!obj._isBuffer)
-}
+  return obj != null && (isBuffer(obj) || isSlowBuffer(obj) || !!obj._isBuffer);
+};
 
-function isBuffer (obj) {
-  return !!obj.constructor && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
+function isBuffer(obj) {
+  return !!obj.constructor && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj);
 }
 
 // For Node v0.10 support. Remove this eventually.
-function isSlowBuffer (obj) {
-  return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
+function isSlowBuffer(obj) {
+  return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0));
 }
 
 },{}],15:[function(require,module,exports){
+'use strict';
+
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
@@ -3193,239 +3201,255 @@ module.exports = Array.isArray || function (arr) {
 (function (process){
 'use strict';
 
-const fs = require('fs');
-const format = require('util').format;
-const EventEmitter = require('events').EventEmitter;
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-let isNodejs = process.version ? true : false;
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-const LogLevels = {
+var fs = require('fs');
+var format = require('util').format;
+var EventEmitter = require('events').EventEmitter;
+
+var isNodejs = process.version ? true : false;
+
+var LogLevels = {
   'DEBUG': 'DEBUG',
-  'INFO':  'INFO',
-  'WARN':  'WARN',
+  'INFO': 'INFO',
+  'WARN': 'WARN',
   'ERROR': 'ERROR',
-  'NONE':  'NONE',
+  'NONE': 'NONE'
 };
 
 // Global log level
-let GlobalLogLevel = LogLevels.DEBUG;
+var GlobalLogLevel = LogLevels.DEBUG;
 
 // Global log file name
-let GlobalLogfile = null;
+var GlobalLogfile = null;
 
-let GlobalEvents = new EventEmitter();
+var GlobalEvents = new EventEmitter();
 
 // ANSI colors
-let Colors = {
-  'Black':   0,
-  'Red':     1,
-  'Green':   2,
-  'Yellow':  3,
-  'Blue':    4,
+var Colors = {
+  'Black': 0,
+  'Red': 1,
+  'Green': 2,
+  'Yellow': 3,
+  'Blue': 4,
   'Magenta': 5,
-  'Cyan':    6,
-  'Grey':    7,
-  'White':   9,
-  'Default': 9,
+  'Cyan': 6,
+  'Grey': 7,
+  'White': 9,
+  'Default': 9
 };
 
 // CSS colors
-if(!isNodejs) {
+if (!isNodejs) {
   Colors = {
-    'Black':   'Black',
-    'Red':     'IndianRed',
-    'Green':   'LimeGreen',
-    'Yellow':  'Orange',
-    'Blue':    'RoyalBlue',
+    'Black': 'Black',
+    'Red': 'IndianRed',
+    'Green': 'LimeGreen',
+    'Yellow': 'Orange',
+    'Blue': 'RoyalBlue',
     'Magenta': 'Orchid',
-    'Cyan':    'SkyBlue',
-    'Grey':    'DimGrey',
-    'White':   'White',
-    'Default': 'Black',
+    'Cyan': 'SkyBlue',
+    'Grey': 'DimGrey',
+    'White': 'White',
+    'Default': 'Black'
   };
 }
 
-const loglevelColors = [Colors.Cyan, Colors.Green, Colors.Yellow, Colors.Red, Colors.Default];
+var loglevelColors = [Colors.Cyan, Colors.Green, Colors.Yellow, Colors.Red, Colors.Default];
 
-const defaultOptions = {
+var defaultOptions = {
   useColors: true,
   color: Colors.Default,
   showTimestamp: true,
   showLevel: true,
   filename: GlobalLogfile,
-  appendFile: true,
+  appendFile: true
 };
 
-class Logger {
-  constructor(category, options) {
+var Logger = function () {
+  function Logger(category, options) {
+    _classCallCheck(this, Logger);
+
     this.category = category;
-    let opts = {};
+    var opts = {};
     Object.assign(opts, defaultOptions);
     Object.assign(opts, options);
     this.options = opts;
   }
 
-  debug() {
-    this._write(LogLevels.DEBUG, format.apply(null, arguments));
-  }
+  _createClass(Logger, [{
+    key: 'debug',
+    value: function debug() {
+      this._write(LogLevels.DEBUG, format.apply(null, arguments));
+    }
+  }, {
+    key: 'log',
+    value: function log() {
+      this.debug.apply(this, arguments);
+    }
+  }, {
+    key: 'info',
+    value: function info() {
+      this._write(LogLevels.INFO, format.apply(null, arguments));
+    }
+  }, {
+    key: 'warn',
+    value: function warn() {
+      this._write(LogLevels.WARN, format.apply(null, arguments));
+    }
+  }, {
+    key: 'error',
+    value: function error() {
+      this._write(LogLevels.ERROR, format.apply(null, arguments));
+    }
+  }, {
+    key: '_write',
+    value: function _write(level, text) {
+      if (!this._shouldLog(level)) return;
 
-  log() {
-    this.debug.apply(this, arguments);
-  }
+      if ((this.options.filename || GlobalLogfile) && !this.fileWriter && isNodejs) this.fileWriter = fs.openSync(this.options.filename || GlobalLogfile, this.options.appendFile ? 'a+' : 'w+');
 
-  info() {
-    this._write(LogLevels.INFO, format.apply(null, arguments));
-  }
+      var format = this._format(level, text);
+      var unformattedText = this._createLogMessage(level, text);
+      var formattedText = this._createLogMessage(level, text, format.timestamp, format.level, format.category, format.text);
 
-  warn() {
-    this._write(LogLevels.WARN, format.apply(null, arguments));
-  }
+      if (this.fileWriter && isNodejs) fs.writeSync(this.fileWriter, unformattedText + '\n', null, 'utf-8');
 
-  error() {
-    this._write(LogLevels.ERROR, format.apply(null, arguments));
-  }
-
-  _write(level, text) {
-    if(!this._shouldLog(level))
-      return;
-
-    if((this.options.filename || GlobalLogfile) && !this.fileWriter && isNodejs)
-      this.fileWriter = fs.openSync(this.options.filename || GlobalLogfile, this.options.appendFile ? 'a+' : 'w+');
-
-    let format = this._format(level, text);
-    let unformattedText = this._createLogMessage(level, text);
-    let formattedText = this._createLogMessage(level, text, format.timestamp, format.level, format.category, format.text);
-
-    if(this.fileWriter && isNodejs)
-      fs.writeSync(this.fileWriter, unformattedText + '\n', null, 'utf-8');
-
-    if(isNodejs || !this.options.useColors) {
-      console.log(formattedText)
-      GlobalEvents.emit('data', this.category, level, text)
-    } else {
-      // TODO: clean this up
-      if(level === LogLevels.ERROR) {
-        if(this.options.showTimestamp && this.options.showLevel) {
-          console.error(formattedText, format.timestamp, format.level, format.category, format.text)
-        } else if(this.options.showTimestamp && !this.options.showLevel) {
-          console.error(formattedText, format.timestamp, format.category, format.text)
-        } else if(!this.options.showTimestamp && this.options.showLevel) {
-          console.error(formattedText, format.level, format.category, format.text)
-        } else {
-          console.error(formattedText, format.category, format.text)
-        }
+      if (isNodejs || !this.options.useColors) {
+        console.log(formattedText);
+        GlobalEvents.emit('data', this.category, level, text);
       } else {
-        if(this.options.showTimestamp && this.options.showLevel) {
-          console.log(formattedText, format.timestamp, format.level, format.category, format.text)
-        } else if(this.options.showTimestamp && !this.options.showLevel) {
-          console.log(formattedText, format.timestamp, format.category, format.text)
-        } else if(!this.options.showTimestamp && this.options.showLevel) {
-          console.log(formattedText, format.level, format.category, format.text)
+        // TODO: clean this up
+        if (level === LogLevels.ERROR) {
+          if (this.options.showTimestamp && this.options.showLevel) {
+            console.error(formattedText, format.timestamp, format.level, format.category, format.text);
+          } else if (this.options.showTimestamp && !this.options.showLevel) {
+            console.error(formattedText, format.timestamp, format.category, format.text);
+          } else if (!this.options.showTimestamp && this.options.showLevel) {
+            console.error(formattedText, format.level, format.category, format.text);
+          } else {
+            console.error(formattedText, format.category, format.text);
+          }
         } else {
-          console.log(formattedText, format.category, format.text)
+          if (this.options.showTimestamp && this.options.showLevel) {
+            console.log(formattedText, format.timestamp, format.level, format.category, format.text);
+          } else if (this.options.showTimestamp && !this.options.showLevel) {
+            console.log(formattedText, format.timestamp, format.category, format.text);
+          } else if (!this.options.showTimestamp && this.options.showLevel) {
+            console.log(formattedText, format.level, format.category, format.text);
+          } else {
+            console.log(formattedText, format.category, format.text);
+          }
         }
       }
     }
-  }
+  }, {
+    key: '_format',
+    value: function _format(level, text) {
+      var timestampFormat = '';
+      var levelFormat = '';
+      var categoryFormat = '';
+      var textFormat = ': ';
 
-  _format(level, text) {
-    let timestampFormat = '';
-    let levelFormat     = '';
-    let categoryFormat  = '';
-    let textFormat      = ': ';
+      if (this.options.useColors) {
+        var levelColor = Object.keys(LogLevels).map(function (f) {
+          return LogLevels[f];
+        }).indexOf(level);
+        var categoryColor = this.options.color;
 
-    if(this.options.useColors) {
-        const levelColor    = Object.keys(LogLevels).map((f) => LogLevels[f]).indexOf(level);
-        const categoryColor = this.options.color;
+        if (isNodejs) {
+          if (this.options.showTimestamp) timestampFormat = '\x1B[3' + Colors.Grey + 'm';
 
-      if(isNodejs) {
-        if(this.options.showTimestamp)
-          timestampFormat = '\u001b[3' + Colors.Grey + 'm';
+          if (this.options.showLevel) levelFormat = '\x1B[3' + loglevelColors[levelColor] + ';22m';
 
-        if(this.options.showLevel)
-          levelFormat = '\u001b[3' + loglevelColors[levelColor] + ';22m';
+          categoryFormat = '\x1B[3' + categoryColor + ';1m';
+          textFormat = '\x1B[0m: ';
+        } else {
+          if (this.options.showTimestamp) timestampFormat = 'color:' + Colors.Grey;
 
-        categoryFormat = '\u001b[3' + categoryColor + ';1m';
-        textFormat = '\u001b[0m: ';
-      } else {
-        if(this.options.showTimestamp)
-          timestampFormat = 'color:' + Colors.Grey;
+          if (this.options.showLevel) levelFormat = 'color:' + loglevelColors[levelColor];
 
-        if(this.options.showLevel)
-          levelFormat = 'color:' + loglevelColors[levelColor];
-
-        categoryFormat = 'color:' + categoryColor + '; font-weight: bold';
+          categoryFormat = 'color:' + categoryColor + '; font-weight: bold';
+        }
       }
+
+      return {
+        timestamp: timestampFormat,
+        level: levelFormat,
+        category: categoryFormat,
+        text: textFormat
+      };
     }
+  }, {
+    key: '_createLogMessage',
+    value: function _createLogMessage(level, text, timestampFormat, levelFormat, categoryFormat, textFormat) {
+      timestampFormat = timestampFormat || '';
+      levelFormat = levelFormat || '';
+      categoryFormat = categoryFormat || '';
+      textFormat = textFormat || ': ';
 
-    return {
-      timestamp: timestampFormat,
-      level: levelFormat,
-      category: categoryFormat,
-      text: textFormat
-    };
-  }
+      if (!isNodejs && this.options.useColors) {
+        if (this.options.showTimestamp) timestampFormat = '%c';
 
-  _createLogMessage(level, text, timestampFormat, levelFormat, categoryFormat, textFormat) {
-    timestampFormat = timestampFormat || '';
-    levelFormat     = levelFormat     || '';
-    categoryFormat  = categoryFormat  || '';
-    textFormat      = textFormat      || ': ';
+        if (this.options.showLevel) levelFormat = '%c';
 
-    if(!isNodejs && this.options.useColors) {
-      if(this.options.showTimestamp)
-        timestampFormat = '%c';
+        categoryFormat = '%c';
+        textFormat = ': %c';
+      }
 
-      if(this.options.showLevel)
-        levelFormat = '%c';
+      var result = '';
 
-      categoryFormat  = '%c';
-      textFormat = ': %c';
+      if (this.options.showTimestamp) result += '' + new Date().toISOString() + ' ';
+
+      result = timestampFormat + result;
+
+      if (this.options.showLevel) result += levelFormat + '[' + level + ']' + (level === LogLevels.INFO || level === LogLevels.WARN ? ' ' : '') + ' ';
+
+      result += categoryFormat + this.category;
+      result += textFormat + text;
+      return result;
     }
+  }, {
+    key: '_shouldLog',
+    value: function _shouldLog(level) {
+      var envLogLevel = typeof process !== "undefined" && process.env !== undefined && process.env.LOG !== undefined ? process.env.LOG.toUpperCase() : null;
+      envLogLevel = typeof window !== "undefined" && window.LOG ? window.LOG.toUpperCase() : envLogLevel;
 
-    let result = '';
+      var logLevel = envLogLevel || GlobalLogLevel;
+      var levels = Object.keys(LogLevels).map(function (f) {
+        return LogLevels[f];
+      });
+      var index = levels.indexOf(level);
+      var levelIdx = levels.indexOf(logLevel);
+      return index >= levelIdx;
+    }
+  }]);
 
-    if(this.options.showTimestamp)
-      result += '' + new Date().toISOString() + ' ';
+  return Logger;
+}();
 
-    result = timestampFormat + result;
-
-    if(this.options.showLevel)
-      result += levelFormat + '[' + level +']' + (level === LogLevels.INFO || level === LogLevels.WARN ? ' ' : '') + ' ';
-
-    result += categoryFormat + this.category;
-    result += textFormat + text;
-    return result;
-  }
-
-  _shouldLog(level) {
-    let envLogLevel = (typeof process !== "undefined" && process.env !== undefined && process.env.LOG !== undefined) ? process.env.LOG.toUpperCase() : null;
-    envLogLevel = (typeof window !== "undefined" && window.LOG) ? window.LOG.toUpperCase() : envLogLevel;
-
-    const logLevel = envLogLevel || GlobalLogLevel;
-    const levels   = Object.keys(LogLevels).map((f) => LogLevels[f]);
-    const index    = levels.indexOf(level);
-    const levelIdx = levels.indexOf(logLevel);
-    return index >= levelIdx;
-  }
-};
+;
 
 /* Public API */
 module.exports = {
   Colors: Colors,
   LogLevels: LogLevels,
-  setLogLevel: (level) => {
+  setLogLevel: function setLogLevel(level) {
     GlobalLogLevel = level;
   },
-  setLogfile: (filename) => {
+  setLogfile: function setLogfile(filename) {
     GlobalLogfile = filename;
   },
-  create: (category, options) => {
-    const logger = new Logger(category, options);
+  create: function create(category, options) {
+    var logger = new Logger(category, options);
     return logger;
   },
-  forceBrowserMode: (force) => isNodejs = !force, // for testing,
-  events: GlobalEvents,
+  forceBrowserMode: function forceBrowserMode(force) {
+    return isNodejs = !force;
+  }, // for testing,
+  events: GlobalEvents
 };
 
 }).call(this,require('_process'))
@@ -3433,9 +3457,7 @@ module.exports = {
 (function (process){
 'use strict';
 
-if (!process.version ||
-    process.version.indexOf('v0.') === 0 ||
-    process.version.indexOf('v1.') === 0 && process.version.indexOf('v1.8.') !== 0) {
+if (!process.version || process.version.indexOf('v0.') === 0 || process.version.indexOf('v1.') === 0 && process.version.indexOf('v1.8.') !== 0) {
   module.exports = nextTick;
 } else {
   module.exports = process.nextTick;
@@ -3448,30 +3470,30 @@ function nextTick(fn, arg1, arg2, arg3) {
   var len = arguments.length;
   var args, i;
   switch (len) {
-  case 0:
-  case 1:
-    return process.nextTick(fn);
-  case 2:
-    return process.nextTick(function afterTickOne() {
-      fn.call(null, arg1);
-    });
-  case 3:
-    return process.nextTick(function afterTickTwo() {
-      fn.call(null, arg1, arg2);
-    });
-  case 4:
-    return process.nextTick(function afterTickThree() {
-      fn.call(null, arg1, arg2, arg3);
-    });
-  default:
-    args = new Array(len - 1);
-    i = 0;
-    while (i < args.length) {
-      args[i++] = arguments[i];
-    }
-    return process.nextTick(function afterTick() {
-      fn.apply(null, args);
-    });
+    case 0:
+    case 1:
+      return process.nextTick(fn);
+    case 2:
+      return process.nextTick(function afterTickOne() {
+        fn.call(null, arg1);
+      });
+    case 3:
+      return process.nextTick(function afterTickTwo() {
+        fn.call(null, arg1, arg2);
+      });
+    case 4:
+      return process.nextTick(function afterTickThree() {
+        fn.call(null, arg1, arg2, arg3);
+      });
+    default:
+      args = new Array(len - 1);
+      i = 0;
+      while (i < args.length) {
+        args[i++] = arguments[i];
+      }
+      return process.nextTick(function afterTick() {
+        fn.apply(null, args);
+      });
   }
 }
 
@@ -3659,7 +3681,9 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 },{}],19:[function(require,module,exports){
-module.exports = require("./lib/_stream_duplex.js")
+"use strict";
+
+module.exports = require("./lib/_stream_duplex.js");
 
 },{"./lib/_stream_duplex.js":20}],20:[function(require,module,exports){
 // a duplex stream is just a stream that is both readable and writable.
@@ -3737,6 +3761,7 @@ function forEach(xs, f) {
     f(xs[i], i);
   }
 }
+
 },{"./_stream_readable":22,"./_stream_writable":24,"core-util-is":10,"inherits":13,"process-nextick-args":17}],21:[function(require,module,exports){
 // a passthrough stream.
 // basically just the most minimal sort of Transform stream.
@@ -3764,6 +3789,7 @@ function PassThrough(options) {
 PassThrough.prototype._transform = function (chunk, encoding, cb) {
   cb(null, chunk);
 };
+
 },{"./_stream_transform":23,"core-util-is":10,"inherits":13}],22:[function(require,module,exports){
 (function (process){
 'use strict';
@@ -3787,7 +3813,7 @@ Readable.ReadableState = ReadableState;
 /*<replacement>*/
 var EE = require('events').EventEmitter;
 
-var EElistenerCount = function (emitter, type) {
+var EElistenerCount = function EElistenerCount(emitter, type) {
   return emitter.listeners(type).length;
 };
 /*</replacement>*/
@@ -3819,7 +3845,7 @@ var debug = void 0;
 if (debugUtil && debugUtil.debuglog) {
   debug = debugUtil.debuglog('stream');
 } else {
-  debug = function () {};
+  debug = function debug() {};
 }
 /*</replacement>*/
 
@@ -3860,7 +3886,7 @@ function ReadableState(options, stream) {
   this.highWaterMark = hwm || hwm === 0 ? hwm : defaultHwm;
 
   // cast to ints.
-  this.highWaterMark = ~ ~this.highWaterMark;
+  this.highWaterMark = ~~this.highWaterMark;
 
   // A linked list is used to store data chunks instead of an array because the
   // linked list can remove elements from the beginning faster than
@@ -4707,6 +4733,7 @@ function indexOf(xs, x) {
   }
   return -1;
 }
+
 }).call(this,require('_process'))
 },{"./_stream_duplex":20,"./internal/streams/BufferList":25,"_process":18,"buffer":9,"buffer-shims":8,"core-util-is":10,"events":11,"inherits":13,"isarray":15,"process-nextick-args":17,"string_decoder/":31,"util":7}],23:[function(require,module,exports){
 // a transform stream is a readable/writable stream where you do
@@ -4891,6 +4918,7 @@ function done(stream, er, data) {
 
   return stream.push(null);
 }
+
 },{"./_stream_duplex":20,"core-util-is":10,"inherits":13}],24:[function(require,module,exports){
 (function (process){
 // A bit simpler than readable streams.
@@ -4972,7 +5000,7 @@ function WritableState(options, stream) {
   this.highWaterMark = hwm || hwm === 0 ? hwm : defaultHwm;
 
   // cast to ints.
-  this.highWaterMark = ~ ~this.highWaterMark;
+  this.highWaterMark = ~~this.highWaterMark;
 
   // drain event flag.
   this.needDrain = false;
@@ -5075,14 +5103,14 @@ var realHasInstance;
 if (typeof Symbol === 'function' && Symbol.hasInstance && typeof Function.prototype[Symbol.hasInstance] === 'function') {
   realHasInstance = Function.prototype[Symbol.hasInstance];
   Object.defineProperty(Writable, Symbol.hasInstance, {
-    value: function (object) {
+    value: function value(object) {
       if (realHasInstance.call(this, object)) return true;
 
       return object && object._writableState instanceof WritableState;
     }
   });
 } else {
-  realHasInstance = function (object) {
+  realHasInstance = function realHasInstance(object) {
     return object instanceof this;
   };
 }
@@ -5278,8 +5306,8 @@ function onwrite(stream, er) {
       asyncWrite(afterWrite, stream, state, finished, cb);
       /*</replacement>*/
     } else {
-        afterWrite(stream, state, finished, cb);
-      }
+      afterWrite(stream, state, finished, cb);
+    }
   }
 }
 
@@ -5447,6 +5475,7 @@ function CorkedRequest(state) {
     }
   };
 }
+
 }).call(this,require('_process'))
 },{"./_stream_duplex":20,"_process":18,"buffer":9,"buffer-shims":8,"core-util-is":10,"events":11,"inherits":13,"process-nextick-args":17,"util-deprecate":32}],25:[function(require,module,exports){
 'use strict';
@@ -5513,16 +5542,21 @@ BufferList.prototype.concat = function (n) {
   }
   return ret;
 };
+
 },{"buffer":9,"buffer-shims":8}],26:[function(require,module,exports){
-module.exports = require("./lib/_stream_passthrough.js")
+"use strict";
+
+module.exports = require("./lib/_stream_passthrough.js");
 
 },{"./lib/_stream_passthrough.js":21}],27:[function(require,module,exports){
 (function (process){
-var Stream = (function (){
+'use strict';
+
+var Stream = function () {
   try {
     return require('st' + 'ream'); // hack to fix a circular dependency issue when used with browserify
-  } catch(_){}
-}());
+  } catch (_) {}
+}();
 exports = module.exports = require('./lib/_stream_readable.js');
 exports.Stream = Stream || exports;
 exports.Readable = exports;
@@ -5537,10 +5571,14 @@ if (!process.browser && process.env.READABLE_STREAM === 'disable' && Stream) {
 
 }).call(this,require('_process'))
 },{"./lib/_stream_duplex.js":20,"./lib/_stream_passthrough.js":21,"./lib/_stream_readable.js":22,"./lib/_stream_transform.js":23,"./lib/_stream_writable.js":24,"_process":18}],28:[function(require,module,exports){
-module.exports = require("./lib/_stream_transform.js")
+"use strict";
+
+module.exports = require("./lib/_stream_transform.js");
 
 },{"./lib/_stream_transform.js":23}],29:[function(require,module,exports){
-module.exports = require("./lib/_stream_writable.js")
+"use strict";
+
+module.exports = require("./lib/_stream_writable.js");
 
 },{"./lib/_stream_writable.js":24}],30:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
@@ -5672,6 +5710,8 @@ Stream.prototype.pipe = function(dest, options) {
 };
 
 },{"events":11,"inherits":13,"readable-stream/duplex.js":19,"readable-stream/passthrough.js":26,"readable-stream/readable.js":27,"readable-stream/transform.js":28,"readable-stream/writable.js":29}],31:[function(require,module,exports){
+'use strict';
+
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -5695,14 +5735,14 @@ Stream.prototype.pipe = function(dest, options) {
 
 var Buffer = require('buffer').Buffer;
 
-var isBufferEncoding = Buffer.isEncoding
-  || function(encoding) {
-       switch (encoding && encoding.toLowerCase()) {
-         case 'hex': case 'utf8': case 'utf-8': case 'ascii': case 'binary': case 'base64': case 'ucs2': case 'ucs-2': case 'utf16le': case 'utf-16le': case 'raw': return true;
-         default: return false;
-       }
-     }
-
+var isBufferEncoding = Buffer.isEncoding || function (encoding) {
+  switch (encoding && encoding.toLowerCase()) {
+    case 'hex':case 'utf8':case 'utf-8':case 'ascii':case 'binary':case 'base64':case 'ucs2':case 'ucs-2':case 'utf16le':case 'utf-16le':case 'raw':
+      return true;
+    default:
+      return false;
+  }
+};
 
 function assertEncoding(encoding) {
   if (encoding && !isBufferEncoding(encoding)) {
@@ -5718,7 +5758,7 @@ function assertEncoding(encoding) {
 // to reason about this code, so it should be split up in the future.
 // @TODO There should be a utf8-strict encoding that rejects invalid UTF-8 code
 // points as used by CESU-8.
-var StringDecoder = exports.StringDecoder = function(encoding) {
+var StringDecoder = exports.StringDecoder = function (encoding) {
   this.encoding = (encoding || 'utf8').toLowerCase().replace(/[-_]/, '');
   assertEncoding(encoding);
   switch (this.encoding) {
@@ -5751,7 +5791,6 @@ var StringDecoder = exports.StringDecoder = function(encoding) {
   this.charLength = 0;
 };
 
-
 // write decodes the given buffer and returns it as JS string that is
 // guaranteed to not contain any partial multi-byte characters. Any partial
 // character found at the end of the buffer is buffered up, and will be
@@ -5761,14 +5800,12 @@ var StringDecoder = exports.StringDecoder = function(encoding) {
 // currently works, but converting a String to a Buffer (via `new Buffer`, or
 // Buffer#write) will replace incomplete surrogates with the unicode
 // replacement character. See https://codereview.chromium.org/121173009/ .
-StringDecoder.prototype.write = function(buffer) {
+StringDecoder.prototype.write = function (buffer) {
   var charStr = '';
   // if our last write ended with an incomplete multibyte character
   while (this.charLength) {
     // determine how many remaining bytes this buffer has to offer for this char
-    var available = (buffer.length >= this.charLength - this.charReceived) ?
-        this.charLength - this.charReceived :
-        buffer.length;
+    var available = buffer.length >= this.charLength - this.charReceived ? this.charLength - this.charReceived : buffer.length;
 
     // add the new bytes to the char buffer
     buffer.copy(this.charBuffer, this.charReceived, 0, available);
@@ -5833,9 +5870,9 @@ StringDecoder.prototype.write = function(buffer) {
 // the end of the given buffer. If so, it sets this.charLength to the byte
 // length that character, and sets this.charReceived to the number of bytes
 // that are available for this character.
-StringDecoder.prototype.detectIncompleteChar = function(buffer) {
+StringDecoder.prototype.detectIncompleteChar = function (buffer) {
   // determine how many bytes we have to check at the end of this buffer
-  var i = (buffer.length >= 3) ? 3 : buffer.length;
+  var i = buffer.length >= 3 ? 3 : buffer.length;
 
   // Figure out if one of the last i bytes of our buffer announces an
   // incomplete char.
@@ -5865,10 +5902,9 @@ StringDecoder.prototype.detectIncompleteChar = function(buffer) {
   this.charReceived = i;
 };
 
-StringDecoder.prototype.end = function(buffer) {
+StringDecoder.prototype.end = function (buffer) {
   var res = '';
-  if (buffer && buffer.length)
-    res = this.write(buffer);
+  if (buffer && buffer.length) res = this.write(buffer);
 
   if (this.charReceived) {
     var cr = this.charReceived;
@@ -5896,6 +5932,7 @@ function base64DetectIncompleteChar(buffer) {
 
 },{"buffer":9}],32:[function(require,module,exports){
 (function (global){
+'use strict';
 
 /**
  * Module exports.
@@ -5921,7 +5958,7 @@ module.exports = deprecate;
  * @api public
  */
 
-function deprecate (fn, msg) {
+function deprecate(fn, msg) {
   if (config('noDeprecation')) {
     return fn;
   }
@@ -5952,7 +5989,7 @@ function deprecate (fn, msg) {
  * @api private
  */
 
-function config (name) {
+function config(name) {
   // accessing global.localStorage can trigger a DOMException in sandboxed iframes
   try {
     if (!global.localStorage) return false;
@@ -5966,14 +6003,39 @@ function config (name) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],33:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"dup":13}],34:[function(require,module,exports){
-module.exports = function isBuffer(arg) {
-  return arg && typeof arg === 'object'
-    && typeof arg.copy === 'function'
-    && typeof arg.fill === 'function'
-    && typeof arg.readUInt8 === 'function';
+if (typeof Object.create === 'function') {
+  // implementation from standard node.js 'util' module
+  module.exports = function inherits(ctor, superCtor) {
+    ctor.super_ = superCtor
+    ctor.prototype = Object.create(superCtor.prototype, {
+      constructor: {
+        value: ctor,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+  };
+} else {
+  // old school shim for old browsers
+  module.exports = function inherits(ctor, superCtor) {
+    ctor.super_ = superCtor
+    var TempCtor = function () {}
+    TempCtor.prototype = superCtor.prototype
+    ctor.prototype = new TempCtor()
+    ctor.prototype.constructor = ctor
+  }
 }
+
+},{}],34:[function(require,module,exports){
+'use strict';
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+module.exports = function isBuffer(arg) {
+  return arg && (typeof arg === 'undefined' ? 'undefined' : _typeof(arg)) === 'object' && typeof arg.copy === 'function' && typeof arg.fill === 'function' && typeof arg.readUInt8 === 'function';
+};
+
 },{}],35:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
@@ -6564,4 +6626,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":34,"_process":18,"inherits":33}]},{},[1]);
+},{"./support/isBuffer":34,"_process":18,"inherits":33}]},{},[1,16]);
