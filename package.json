@@ -8,8 +8,8 @@
     "coveralls": "cat ./coverage/lcov.info | coveralls",
     "clean": "rm -rf dist/*",
     "prebuild": "npm run clean && npm run test",
-    "build": "browserify index.js -o dist/hls-ts.js -t [ babelify --presets es2015 ] && $(npm bin)/uglifyjs dist/hls-ts.js -o dist/hls-ts.min.js",
-    "version": "git add -A dist",
+    "build": "browserify index.js node_modules/logplease/src/index.js -o dist/hls-ts.js -t [ babelify --presets es2015 ] && $(npm bin)/uglifyjs dist/hls-ts.js -o dist/hls-ts.min.js",
+    "version": "npm run build && git add -A dist",
     "postversion": "git push && git push --tags"
   },
   "author": "Jonas Birme <jonas.birme@eyevinn.se> (http://eyevinn.github.io)",
