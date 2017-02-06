@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/Eyevinn/hls-ts-js.svg?branch=master)](https://travis-ci.org/Eyevinn/hls-ts-js)
-[![Coverage Status](https://coveralls.io/repos/github/Eyevinn/hls.js/badge.svg?branch=master)](https://coveralls.io/github/Eyevinn/hls.js?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/Eyevinn/hls-ts-js/badge.svg?branch=master)](https://coveralls.io/github/Eyevinn/hls-ts-js?branch=master)
 
 A Javascript library to parse Apple HLS MPEG Transport Stream segments
 
