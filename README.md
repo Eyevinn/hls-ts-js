@@ -33,6 +33,28 @@ request.get("http://example.com/seg10.ts")
 });
 ```
 
+## Usage (Browser version)
+
+```
+<script src="dist/hls-ts.min.js"></script>
+<script>
+  var xhr = new XMLHttpRequest();
+  var url = "http://example.com/hls/seg-10s.ts";
+  var parser = new window.HlsTs({ debug: false });
+  xhr.responseType = "arraybuffer";
+  xhr.onloadend = function() {
+    var buffer = xhr.response;
+    var data = new Uint8Array(buffer);
+    parser.parse(data).then(function() {
+      var avcData = parser.getDataStreamByProgramType("avc");
+      console.log(avcData.data.length);
+    }).catch(function(err) { console.error(err.message); }).then(done);
+  };
+  xhr.open("GET", url);
+  xhr.send();
+</script>
+```
+
 ## Contributing
 All contributions are welcome but before you submit a Pull Request make sure you follow the same
 code conventions and that you have written unit tests
