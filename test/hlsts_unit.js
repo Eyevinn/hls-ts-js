@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT License
 // license that can be found in the LICENSE file.
 // Author: Jonas Birme (Eyevinn Technology)
+
 const request = require("request");
 const hlsTs = require("../index.js");
 
