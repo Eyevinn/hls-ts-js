@@ -52,6 +52,7 @@ describe("TS Parser", () => {
     expect(aacPackets.length).toBe(713);
     expect(avcData.size).toBe(879536);
     expect(aacData.size).toBe(119470);
+    expect(avcData.id).toBe(224);
   });
 
   it("can parse PCR", () => {
