@@ -46,8 +46,15 @@ request.get("http://example.com/seg10.ts")
     var buffer = xhr.response;
     var data = new Uint8Array(buffer);
     parser.parse(data).then(function() {
-      var avcData = parser.getDataStreamByProgramType("avc");
-      console.log(avcData.data.length);
+      // Obtain all programs found in the Transport Stream
+      var programs = parser.getPrograms();
+
+      // Obtain all packets for a specific program stream
+      var avcPackets = parser.getPacketsByProgramType("avc");
+      
+      // Obtain the payload for a program stream
+      var avcPayload = parser.getDataStreamByProgramType("avc");
+      
     }).catch(function(err) { console.error(err.message); }).then(done);
   };
   xhr.open("GET", url);
