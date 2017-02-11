@@ -9,7 +9,7 @@ describe("Hls TS browser library", function() {
   it("can parse data from XHR response", function(done) {
     var xhr = new XMLHttpRequest();
     var url = "http://localhost:9876/base/test/support/testassets/seg-10s.ts";
-    var parser = new window.HlsTs({ debug: true });
+    var parser = new window.HlsTs({ debug: false });
     xhr.responseType = "arraybuffer";
     xhr.onloadend = function() {
       var buffer = xhr.response;
