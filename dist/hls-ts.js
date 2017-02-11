@@ -1,6 +1,11 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
 
+window.HlsTs = require("./lib/browser.js");
+
+},{"./lib/browser.js":3}],2:[function(require,module,exports){
+"use strict";
+
 var Logger = require("logplease");
 var ParseStream = require("./lib/parse_stream.js");
 
@@ -37,7 +42,49 @@ var HlsTS = {
 
 module.exports = HlsTS;
 
-},{"./lib/parse_stream.js":2,"logplease":16}],2:[function(require,module,exports){
+},{"./lib/parse_stream.js":4,"logplease":18}],3:[function(require,module,exports){
+"use strict";
+
+var Logger = require("logplease");
+var TSParser = require("./tsparser.js");
+
+var HlsTsBrowser = function constructor(opts) {
+  if (opts && opts.debug) {
+    Logger.setLogLevel("DEBUG");
+  } else {
+    Logger.setLogLevel("INFO");
+  }
+  this.parser = new TSParser();
+};
+
+HlsTsBrowser.prototype.parse = function parse(data) {
+  var _this = this;
+
+  return new Promise(function (resolve, reject) {
+    if (_this.parser.isValidChunk(data)) {
+      _this.parser.push(data, false);
+      resolve();
+    } else {
+      reject("Not a valid TS chunk");
+    }
+  });
+};
+
+HlsTsBrowser.prototype.getPrograms = function () {
+  return this.parser.getPrograms().getTypes();
+};
+
+HlsTsBrowser.prototype.getPacketsByProgramType = function (type) {
+  return this.parser.getPrograms().getPackets(type);
+};
+
+HlsTsBrowser.prototype.getDataStreamByProgramType = function (type) {
+  return this.parser.getPrograms().getDataStream(type);
+};
+
+module.exports = HlsTsBrowser;
+
+},{"./tsparser.js":5,"logplease":18}],4:[function(require,module,exports){
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -84,13 +131,13 @@ ParseStream.prototype._write = function (chunk, encoding, next) {
       err = new Error("Invalid TS chunk");
     }
   }
-  this.parser.push(chunk);
+  this.parser.push(chunk, false);
   next(err);
 };
 
 module.exports = ParseStream;
 
-},{"./tsparser.js":3,"stream":30}],3:[function(require,module,exports){
+},{"./tsparser.js":5,"stream":32}],5:[function(require,module,exports){
 "use strict";
 
 // Copyright 2017 Eyevinn Technology. All rights reserved
@@ -168,10 +215,19 @@ var TSParser = function constructor() {
 };
 
 TSParser.prototype.getPrograms = function getPrograms() {
+  if (this.bufferedData && this.bufferedData.length > 0) {
+    // We have some unparsed data remaining
+    log.debug("We have some unparsed data that we need to take care of " + this.bufferedData.length);
+    var nil = new Uint8Array(0);
+    this.push(nil, true);
+  }
+  //log.debug(this.size, Object.keys(this.media).map(type => this.media[type].payload.length));
   return new TSPrograms(this.pmt, this.packets, this.media);
 };
 
-TSParser.prototype.push = function push(chunk) {
+TSParser.prototype.push = function push(chunk, lastChunk) {
+  var _this = this;
+
   this.size += chunk.length;
   var chunkToParse = chunk;
   if (this.bufferedData && this.bufferedData.length > 0) {
@@ -182,7 +238,7 @@ TSParser.prototype.push = function push(chunk) {
     chunkToParse.set(chunk, this.bufferedData.length);
     this.bufferedData = undefined;
   }
-  if (!this.isValidChunk(chunkToParse)) {
+  if (!lastChunk && !this.isValidChunk(chunkToParse)) {
     throw new Error("Misaligned chunks to parse");
   }
   var remainBytes = this._parsePackets(chunkToParse);
@@ -192,17 +248,21 @@ TSParser.prototype.push = function push(chunk) {
     // We need to buffer this data until we have a complete packet again
     this.bufferedData = chunk.slice(-remainBytes);
   }
+  log.debug(this.size, this.packets.length, Object.keys(this.media).sort().map(function (type) {
+    return _this.media[type].payload.length;
+  }));
 };
 
 TSParser.prototype.isValidChunk = function isValidChunk(chunk) {
   if (chunk.length >= 3 * PACKET_SIZE && chunk[0] === SYNC_BYTE && chunk[1 * PACKET_SIZE] === SYNC_BYTE && chunk[2 * PACKET_SIZE] === SYNC_BYTE) {
     return true;
   }
+  log.debug("Invalid chunk of data len:" + chunk.length + "," + chunk[0] + "," + chunk[1 * PACKET_SIZE] + "," + chunk[2 * PACKET_SIZE]);
   return false;
 };
 
 TSParser.prototype._parsePackets = function _parsePackets(chunk) {
-  var _this = this;
+  var _this2 = this;
 
   var len = chunk.length;
   var offset = void 0;
@@ -261,7 +321,7 @@ TSParser.prototype._parsePackets = function _parsePackets(chunk) {
 
           // Parse PMT
           this.pmt = this._parsePMT(chunk, offset);
-          log.info(this.pmt);
+          log.debug(this.pmt);
         }
       } else if (this.pmt) {
         // log.debug(`PID:${packet.pid}, AAC:${this.pmt.aac}, AVC:${this.pmt.avc}`);
@@ -288,9 +348,9 @@ TSParser.prototype._parsePackets = function _parsePackets(chunk) {
               newPayload.set(pes.payload, stream.payload.length);
               stream.payload = newPayload;
             }
+            stream.data = [];
+            stream.size = 0;
           }
-          stream.data = [];
-          stream.size = 0;
         }
         stream.data.push(chunk.subarray(offset, pos + PACKET_SIZE));
         stream.size += pos + PACKET_SIZE - offset;
@@ -305,6 +365,8 @@ TSParser.prototype._parsePackets = function _parsePackets(chunk) {
             break;
         }
       }
+    } else {
+      throw new Error("Invalid packet");
     }
     this.packets.push(packet);
     pos += PACKET_SIZE;
@@ -312,9 +374,9 @@ TSParser.prototype._parsePackets = function _parsePackets(chunk) {
 
   // We might have data left to parse
   Object.keys(this.media).forEach(function (type) {
-    var stream = _this.media[type];
+    var stream = _this2.media[type];
     if (stream.size > 0) {
-      var _pes = _this._parsePES(stream);
+      var _pes = _this2._parsePES(stream);
       if (_pes) {
         if (_pes.pts && stream.pts.indexOf(_pes.pts) === -1) {
           stream.pts.push(_pes.pts);
@@ -327,9 +389,9 @@ TSParser.prototype._parsePackets = function _parsePackets(chunk) {
         _newPayload.set(_pes.payload, stream.payload.length);
         stream.payload = _newPayload;
       }
+      stream.data = [];
+      stream.size = 0;
     }
-    stream.data = [];
-    stream.size = 0;
   });
 
   return len - pos;
@@ -358,14 +420,17 @@ TSParser.prototype._parsePES = function _parsePES(stream) {
   }
   var pes = new PES();
 
+  //log.debug(`${stream.type}: ${stream.size} bytes PES to parse`);
   var fragment = stream.data[0];
   var prefix = (fragment[0] << 16) + (fragment[1] << 8) + fragment[2];
+  var payloadStart = 0,
+      hdrlen = 0;
 
   if (prefix === 1) {
     pes.pkglen = (fragment[4] << 8) + fragment[5];
-    //log.debug("PES size:", pes.size);
     if (pes.pkglen && pes.pkglen > stream.size - 6) {
-      // Truncated PES
+      var remain = pes.pkglen - stream.size;
+      //log.debug(`${stream.type}: Incomplete PES package we need to wait for more data (${pes.pkglen}): ${remain} bytes`)
       return null;
     }
     if (pes.pkglen === 0) {
@@ -404,35 +469,33 @@ TSParser.prototype._parsePES = function _parsePES(stream) {
         pes.dts = pes.pts;
       }
     }
-
-    var hdrlen = fragment[8];
-    var payloadStart = hdrlen + PES_HDR_SIZE + PES_EXT_SIZE;
-    pes.payload = new Uint8Array(stream.size - payloadStart);
-    var i = 0;
-
-    for (var j = 0; j < stream.data.length; j++) {
-      fragment = stream.data[j];
-      var len = fragment.byteLength;
-      if (payloadStart) {
-        if (payloadStart > len) {
-          payloadStart -= len;
-          continue;
-        } else {
-          fragment = fragment.subarray(payloadStart);
-          len -= payloadStart;
-          payloadStart = 0;
-        }
-      }
-      pes.payload.set(fragment, i);
-      i += len;
-    }
-    if (pes.pkglen) {
-      pes.pkglen -= hdrlen + PES_EXT_SIZE;
-    }
-    return pes;
-  } else {
-    return null;
+    hdrlen = fragment[8];
+    payloadStart = hdrlen + PES_HDR_SIZE + PES_EXT_SIZE;
   }
+
+  pes.payload = new Uint8Array(stream.size - payloadStart);
+  var i = 0;
+
+  for (var j = 0; j < stream.data.length; j++) {
+    fragment = stream.data[j];
+    var len = fragment.byteLength;
+    if (payloadStart) {
+      if (payloadStart > len) {
+        payloadStart -= len;
+        continue;
+      } else {
+        fragment = fragment.subarray(payloadStart);
+        len -= payloadStart;
+        payloadStart = 0;
+      }
+    }
+    pes.payload.set(fragment, i);
+    i += len;
+  }
+  if (pes.pkglen) {
+    pes.pkglen -= hdrlen + PES_EXT_SIZE;
+  }
+  return pes;
 };
 
 TSParser.prototype._parsePAT = function _parsePAT(chunk, offset) {
@@ -498,7 +561,7 @@ TSParser.prototype._parsePMT = function _parsePMT(chunk, offset) {
 
 module.exports = TSParser;
 
-},{"./tsprograms.js":4,"./util.js":5,"logplease":16}],4:[function(require,module,exports){
+},{"./tsprograms.js":6,"./util.js":7,"logplease":18}],6:[function(require,module,exports){
 "use strict";
 
 // Copyright 2017 Eyevinn Technology. All rights reserved
@@ -587,6 +650,7 @@ TSPrograms.prototype.getDataStream = function getDataStream(type) {
     return null;
   }
 
+  log.debug(type + ": len=" + this.streams[type].payload.length);
   var buffer = new ArrayBuffer(this.streams[type].payload.length);
   var dataStream = {
     data: new Uint8Array(buffer),
@@ -599,7 +663,7 @@ TSPrograms.prototype.getDataStream = function getDataStream(type) {
 
 module.exports = TSPrograms;
 
-},{"logplease":16}],5:[function(require,module,exports){
+},{"logplease":18}],7:[function(require,module,exports){
 "use strict";
 
 var util = {
@@ -610,7 +674,7 @@ var util = {
 
 module.exports = util;
 
-},{}],6:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 'use strict';
 
 exports.byteLength = byteLength;
@@ -726,9 +790,9 @@ function fromByteArray(uint8) {
   return parts.join('');
 }
 
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -840,7 +904,7 @@ exports.allocUnsafeSlow = function allocUnsafeSlow(size) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"buffer":9}],9:[function(require,module,exports){
+},{"buffer":11}],11:[function(require,module,exports){
 (function (global){
 /*!
  * The buffer module from node.js, for the browser.
@@ -2633,7 +2697,7 @@ function isnan (val) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"base64-js":6,"ieee754":12,"isarray":15}],10:[function(require,module,exports){
+},{"base64-js":8,"ieee754":14,"isarray":17}],12:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -2744,7 +2808,7 @@ function objectToString(o) {
 }
 
 }).call(this,{"isBuffer":require("../../is-buffer/index.js")})
-},{"../../is-buffer/index.js":14}],11:[function(require,module,exports){
+},{"../../is-buffer/index.js":16}],13:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3048,7 +3112,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
@@ -3136,7 +3200,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128;
 };
 
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 'use strict';
 
 if (typeof Object.create === 'function') {
@@ -3163,7 +3227,7 @@ if (typeof Object.create === 'function') {
   };
 }
 
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 'use strict';
 
 /*!
@@ -3188,7 +3252,7 @@ function isSlowBuffer(obj) {
   return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0));
 }
 
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 'use strict';
 
 var toString = {}.toString;
@@ -3197,7 +3261,7 @@ module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],16:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -3453,7 +3517,7 @@ module.exports = {
 };
 
 }).call(this,require('_process'))
-},{"_process":18,"events":11,"fs":7,"util":35}],17:[function(require,module,exports){
+},{"_process":20,"events":13,"fs":9,"util":37}],19:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -3498,7 +3562,7 @@ function nextTick(fn, arg1, arg2, arg3) {
 }
 
 }).call(this,require('_process'))
-},{"_process":18}],18:[function(require,module,exports){
+},{"_process":20}],20:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -3680,12 +3744,12 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],19:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 "use strict";
 
 module.exports = require("./lib/_stream_duplex.js");
 
-},{"./lib/_stream_duplex.js":20}],20:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":22}],22:[function(require,module,exports){
 // a duplex stream is just a stream that is both readable and writable.
 // Since JS doesn't have multiple prototypal inheritance, this class
 // prototypally inherits from Readable, and then parasitically from
@@ -3762,7 +3826,7 @@ function forEach(xs, f) {
   }
 }
 
-},{"./_stream_readable":22,"./_stream_writable":24,"core-util-is":10,"inherits":13,"process-nextick-args":17}],21:[function(require,module,exports){
+},{"./_stream_readable":24,"./_stream_writable":26,"core-util-is":12,"inherits":15,"process-nextick-args":19}],23:[function(require,module,exports){
 // a passthrough stream.
 // basically just the most minimal sort of Transform stream.
 // Every written chunk gets output as-is.
@@ -3790,7 +3854,7 @@ PassThrough.prototype._transform = function (chunk, encoding, cb) {
   cb(null, chunk);
 };
 
-},{"./_stream_transform":23,"core-util-is":10,"inherits":13}],22:[function(require,module,exports){
+},{"./_stream_transform":25,"core-util-is":12,"inherits":15}],24:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -4735,7 +4799,7 @@ function indexOf(xs, x) {
 }
 
 }).call(this,require('_process'))
-},{"./_stream_duplex":20,"./internal/streams/BufferList":25,"_process":18,"buffer":9,"buffer-shims":8,"core-util-is":10,"events":11,"inherits":13,"isarray":15,"process-nextick-args":17,"string_decoder/":31,"util":7}],23:[function(require,module,exports){
+},{"./_stream_duplex":22,"./internal/streams/BufferList":27,"_process":20,"buffer":11,"buffer-shims":10,"core-util-is":12,"events":13,"inherits":15,"isarray":17,"process-nextick-args":19,"string_decoder/":33,"util":9}],25:[function(require,module,exports){
 // a transform stream is a readable/writable stream where you do
 // something with the data.  Sometimes it's called a "filter",
 // but that's not a great name for it, since that implies a thing where
@@ -4919,7 +4983,7 @@ function done(stream, er, data) {
   return stream.push(null);
 }
 
-},{"./_stream_duplex":20,"core-util-is":10,"inherits":13}],24:[function(require,module,exports){
+},{"./_stream_duplex":22,"core-util-is":12,"inherits":15}],26:[function(require,module,exports){
 (function (process){
 // A bit simpler than readable streams.
 // Implement an async ._write(chunk, encoding, cb), and it'll handle all
@@ -5477,7 +5541,7 @@ function CorkedRequest(state) {
 }
 
 }).call(this,require('_process'))
-},{"./_stream_duplex":20,"_process":18,"buffer":9,"buffer-shims":8,"core-util-is":10,"events":11,"inherits":13,"process-nextick-args":17,"util-deprecate":32}],25:[function(require,module,exports){
+},{"./_stream_duplex":22,"_process":20,"buffer":11,"buffer-shims":10,"core-util-is":12,"events":13,"inherits":15,"process-nextick-args":19,"util-deprecate":34}],27:[function(require,module,exports){
 'use strict';
 
 var Buffer = require('buffer').Buffer;
@@ -5543,12 +5607,12 @@ BufferList.prototype.concat = function (n) {
   return ret;
 };
 
-},{"buffer":9,"buffer-shims":8}],26:[function(require,module,exports){
+},{"buffer":11,"buffer-shims":10}],28:[function(require,module,exports){
 "use strict";
 
 module.exports = require("./lib/_stream_passthrough.js");
 
-},{"./lib/_stream_passthrough.js":21}],27:[function(require,module,exports){
+},{"./lib/_stream_passthrough.js":23}],29:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -5570,17 +5634,17 @@ if (!process.browser && process.env.READABLE_STREAM === 'disable' && Stream) {
 }
 
 }).call(this,require('_process'))
-},{"./lib/_stream_duplex.js":20,"./lib/_stream_passthrough.js":21,"./lib/_stream_readable.js":22,"./lib/_stream_transform.js":23,"./lib/_stream_writable.js":24,"_process":18}],28:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":22,"./lib/_stream_passthrough.js":23,"./lib/_stream_readable.js":24,"./lib/_stream_transform.js":25,"./lib/_stream_writable.js":26,"_process":20}],30:[function(require,module,exports){
 "use strict";
 
 module.exports = require("./lib/_stream_transform.js");
 
-},{"./lib/_stream_transform.js":23}],29:[function(require,module,exports){
+},{"./lib/_stream_transform.js":25}],31:[function(require,module,exports){
 "use strict";
 
 module.exports = require("./lib/_stream_writable.js");
 
-},{"./lib/_stream_writable.js":24}],30:[function(require,module,exports){
+},{"./lib/_stream_writable.js":26}],32:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -5709,7 +5773,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":11,"inherits":13,"readable-stream/duplex.js":19,"readable-stream/passthrough.js":26,"readable-stream/readable.js":27,"readable-stream/transform.js":28,"readable-stream/writable.js":29}],31:[function(require,module,exports){
+},{"events":13,"inherits":15,"readable-stream/duplex.js":21,"readable-stream/passthrough.js":28,"readable-stream/readable.js":29,"readable-stream/transform.js":30,"readable-stream/writable.js":31}],33:[function(require,module,exports){
 'use strict';
 
 // Copyright Joyent, Inc. and other Node contributors.
@@ -5930,7 +5994,7 @@ function base64DetectIncompleteChar(buffer) {
   this.charLength = this.charReceived ? 3 : 0;
 }
 
-},{"buffer":9}],32:[function(require,module,exports){
+},{"buffer":11}],34:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -6002,7 +6066,7 @@ function config(name) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],33:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -6027,7 +6091,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],34:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 'use strict';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -6036,7 +6100,7 @@ module.exports = function isBuffer(arg) {
   return arg && (typeof arg === 'undefined' ? 'undefined' : _typeof(arg)) === 'object' && typeof arg.copy === 'function' && typeof arg.fill === 'function' && typeof arg.readUInt8 === 'function';
 };
 
-},{}],35:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -6626,4 +6690,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":34,"_process":18,"inherits":33}]},{},[1,16]);
+},{"./support/isBuffer":36,"_process":20,"inherits":35}]},{},[2,1,18]);
