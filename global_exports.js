@@ -1,0 +1,1 @@
+window.HlsTs = require("./lib/browser.js");
