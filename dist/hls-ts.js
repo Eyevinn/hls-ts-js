@@ -8,6 +8,7 @@ window.HlsTs = require("./lib/browser.js");
 
 var Logger = require("logplease");
 var ParseStream = require("./lib/parse_stream.js");
+var AVCParser = require("./lib/pes/pes_avc_parser.js");
 
 var HlsTS = {
   streamParser: undefined,
@@ -37,13 +38,21 @@ var HlsTS = {
       throw new Error("Nothing parsed yet");
     }
     return this.streamParser.getPrograms().getDataStream(type);
+  },
+  createAvcParser: function createAvcParser(dataStream) {
+    return new AVCParser(dataStream);
   }
 };
 
 module.exports = HlsTS;
 
-},{"./lib/parse_stream.js":4,"logplease":18}],3:[function(require,module,exports){
+},{"./lib/parse_stream.js":4,"./lib/pes/pes_avc_parser.js":5,"logplease":21}],3:[function(require,module,exports){
 "use strict";
+
+// Copyright 2017 Eyevinn Technology. All rights reserved
+// Use of this source code is governed by a MIT License
+// license that can be found in the LICENSE file.
+// Author: Jonas Birme (Eyevinn Technology)
 
 var Logger = require("logplease");
 var TSParser = require("./tsparser.js");
@@ -84,7 +93,7 @@ HlsTsBrowser.prototype.getDataStreamByProgramType = function (type) {
 
 module.exports = HlsTsBrowser;
 
-},{"./tsparser.js":5,"logplease":18}],4:[function(require,module,exports){
+},{"./tsparser.js":7,"logplease":21}],4:[function(require,module,exports){
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -137,7 +146,207 @@ ParseStream.prototype._write = function (chunk, encoding, next) {
 
 module.exports = ParseStream;
 
-},{"./tsparser.js":5,"stream":32}],5:[function(require,module,exports){
+},{"./tsparser.js":7,"stream":35}],5:[function(require,module,exports){
+"use strict";
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+// Copyright 2017 Eyevinn Technology. All rights reserved
+// Use of this source code is governed by a MIT License
+// license that can be found in the LICENSE file.
+// Author: Jonas Birme (Eyevinn Technology)
+
+var PESParser = require("./pes_parser.js");
+var log = require("logplease").create("PESAVCParser", { useColors: false });
+var util = require("../util.js");
+
+var NAL_START_PREFIX = 0x01;
+var BYTE_STATE = {
+  "0-7": 0,
+  "8-15": 1,
+  "16-23": 2,
+  "24-31": 3
+};
+
+var NAL_UNIT_TYPE = {
+  0: "unspecified",
+  1: "slice_layer_without_partitioning_rbsp()",
+  2: "slice_data_partition_a_layer_rbsp()",
+  3: "slice_data_partition_b_layer_rbsp()",
+  4: "slice_data_partition_c_layer_rbsp()",
+  5: "slice_layer_without_partitioning_rbsp()",
+  6: "sei_rbsp()",
+  7: "seq_parameter_set_rbsp()",
+  8: "pic_parameter_set_rbsp()",
+  9: "access_unit_delimiter_rbsp()",
+  10: "end_of_seq_rbsp( )",
+  11: "end_of_stream_rbsp( )",
+  12: "filler_data_rbsp()",
+  13: "seq_parameter_set_extension_rbsp()",
+  14: "prefix_nal_unit_rbsp()",
+  15: "subset_seq_parameter_set_rbsp()",
+  16: "reserved",
+  17: "reserved",
+  18: "reserved",
+  19: "slice_layer_without_partitioning_rbsp()",
+  20: "slice_layer_extension_rbsp()",
+  21: "slice_layer_extension_rbsp() annex I",
+  22: "reserved",
+  23: "reserved",
+  24: "unspecified",
+  28: "unspecified",
+  29: "unspecified"
+};
+
+var NALUnit = function constructor() {
+  return {
+    data: undefined,
+    type: undefined,
+    offset: -1,
+    pes: undefined
+  };
+};
+
+var PESAVCParser = function (_PESParser) {
+  _inherits(PESAVCParser, _PESParser);
+
+  function PESAVCParser(pes) {
+    _classCallCheck(this, PESAVCParser);
+
+    return _possibleConstructorReturn(this, (PESAVCParser.__proto__ || Object.getPrototypeOf(PESAVCParser)).call(this, pes));
+  }
+
+  _createClass(PESAVCParser, [{
+    key: "nalUnitType",
+    value: function nalUnitType(type) {
+      return NAL_UNIT_TYPE[type];
+    }
+  }, {
+    key: "getNalUnits",
+    value: function getNalUnits() {
+      var data = this.getData();
+      var len = data.byteLength;
+      var state = BYTE_STATE["0-7"];
+      var pos = 0;
+      var units = [];
+      var unitType = void 0;
+      var unitStartPos = -1;
+
+      //console.log(util.hexDump(data.slice(0, 100)));
+
+      var byte = void 0;
+      while (pos < len) {
+        byte = data[pos++];
+        if (state === BYTE_STATE["0-7"]) {
+          state = byte ? BYTE_STATE["0-7"] : BYTE_STATE["8-15"];
+          continue;
+        }
+        if (state === BYTE_STATE["8-15"]) {
+          state = byte ? BYTE_STATE["0-7"] : BYTE_STATE["16-23"];
+          continue;
+        }
+        if (state === BYTE_STATE["16-23"] || state === BYTE_STATE["24-31"]) {
+          if (byte === 0) {
+            state = BYTE_STATE["24-31"];
+          } else if (byte === NAL_START_PREFIX) {
+            if (unitStartPos >= 0) {
+              var unit = new NALUnit();
+              unit.data = data.subarray(unitStartPos, pos - state - 1);
+              unit.type = unitType;
+              unit.offset = unitStartPos - state - 1;
+              unit.pes = this.getHeaderForByteOffset(unit.offset);
+              units.push(unit);
+              unitStartPos = -1;
+            } else {
+              unitType = data[pos] & 0x1f;
+              unitStartPos = pos;
+              //log.debug(`NAL Type:${NAL_UNIT_TYPE[unitType]} (${unitStartPos})`);
+            }
+          } else {
+            state = BYTE_STATE["0-7"];
+          }
+        }
+      }
+      if (unitStartPos >= 0) {
+        var _unit = new NALUnit();
+        _unit.data = data.subarray(unitStartPos, pos - state - 1);
+        _unit.type = unitType;
+        _unit.offset = unitStartPos - state - 1;
+        _unit.pes = this.getHeaderForByteOffset(_unit.offset);
+        units.push(_unit);
+      }
+      return units;
+    }
+  }]);
+
+  return PESAVCParser;
+}(PESParser);
+
+module.exports = PESAVCParser;
+
+},{"../util.js":9,"./pes_parser.js":6,"logplease":21}],6:[function(require,module,exports){
+"use strict";
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+// Copyright 2017 Eyevinn Technology. All rights reserved
+// Use of this source code is governed by a MIT License
+// license that can be found in the LICENSE file.
+// Author: Jonas Birme (Eyevinn Technology)
+
+var PESParser = function () {
+  function PESParser(pes) {
+    _classCallCheck(this, PESParser);
+
+    this.data = pes.data;
+    this.pes = pes.pes;
+    this.id = pes.id;
+  }
+
+  _createClass(PESParser, [{
+    key: "getId",
+    value: function getId() {
+      return this.id;
+    }
+  }, {
+    key: "getData",
+    value: function getData() {
+      return this.data;
+    }
+  }, {
+    key: "getHeaders",
+    value: function getHeaders() {
+      return this.pes;
+    }
+  }, {
+    key: "getHeaderForByteOffset",
+    value: function getHeaderForByteOffset(offset) {
+      var lastPes = undefined;
+      for (var i = 0; i < this.pes.length; i++) {
+        var p = this.pes[i];
+        if (i > 0 && p.offset > offset) {
+          var _lastPes = this.pes[i - 1];
+          return _lastPes;
+        }
+      }
+      return null;
+    }
+  }]);
+
+  return PESParser;
+}();
+
+module.exports = PESParser;
+
+},{}],7:[function(require,module,exports){
 "use strict";
 
 // Copyright 2017 Eyevinn Technology. All rights reserved
@@ -193,7 +402,8 @@ var PES = function constructor() {
     pts: undefined,
     dts: undefined,
     flags: undefined,
-    payload: undefined
+    payload: undefined,
+    id: undefined
   };
 };
 
@@ -337,12 +547,19 @@ TSParser.prototype._parsePackets = function _parsePackets(chunk) {
           if (stream.size > 0) {
             var pes = this._parsePES(stream);
             if (pes) {
-              if (pes.pts && stream.pts.indexOf(pes.pts) === -1) {
-                stream.pts.push(pes.pts);
+              var peshdr = {};
+              if (pes.pts) {
+                peshdr.pts = pes.pts;
               }
-              if (pes.dts && stream.dts.indexOf(pes.dts) === -1) {
-                stream.dts.push(pes.dts);
+              if (pes.dts) {
+                peshdr.dts = pes.dts;
               }
+              if (pes.id) {
+                stream.id = pes.id;
+              }
+              peshdr.offset = stream.payload.length;
+              stream.peshdr.push(peshdr);
+
               var newPayload = new Uint8Array(stream.payload.length + pes.payload.length);
               newPayload.set(stream.payload);
               newPayload.set(pes.payload, stream.payload.length);
@@ -378,12 +595,19 @@ TSParser.prototype._parsePackets = function _parsePackets(chunk) {
     if (stream.size > 0) {
       var _pes = _this2._parsePES(stream);
       if (_pes) {
-        if (_pes.pts && stream.pts.indexOf(_pes.pts) === -1) {
-          stream.pts.push(_pes.pts);
+        var _peshdr = {};
+        if (_pes.pts) {
+          _peshdr.pts = _pes.pts;
         }
-        if (_pes.dts && stream.dts.indexOf(_pes.dts) === -1) {
-          stream.dts.push(_pes.dts);
+        if (_pes.dts) {
+          _peshdr.dts = _pes.dts;
         }
+        if (_pes.id) {
+          stream.id = _pes.id;
+        }
+        _peshdr.offset = stream.payload.length;
+        stream.peshdr.push(_peshdr);
+
         var _newPayload = new Uint8Array(stream.payload.length + _pes.payload.length);
         _newPayload.set(stream.payload);
         _newPayload.set(_pes.payload, stream.payload.length);
@@ -403,8 +627,7 @@ TSParser.prototype._initStream = function _initStream(type) {
     data: [],
     payload: new Uint8Array(0),
     size: 0,
-    pts: [],
-    dts: []
+    peshdr: []
   };
 };
 
@@ -427,6 +650,7 @@ TSParser.prototype._parsePES = function _parsePES(stream) {
       hdrlen = 0;
 
   if (prefix === 1) {
+    pes.id = fragment[3];
     pes.pkglen = (fragment[4] << 8) + fragment[5];
     if (pes.pkglen && pes.pkglen > stream.size - 6) {
       var remain = pes.pkglen - stream.size;
@@ -561,7 +785,7 @@ TSParser.prototype._parsePMT = function _parsePMT(chunk, offset) {
 
 module.exports = TSParser;
 
-},{"./tsprograms.js":6,"./util.js":7,"logplease":18}],6:[function(require,module,exports){
+},{"./tsprograms.js":8,"./util.js":9,"logplease":21}],8:[function(require,module,exports){
 "use strict";
 
 // Copyright 2017 Eyevinn Technology. All rights reserved
@@ -602,8 +826,12 @@ TSPrograms.prototype.getTypes = function getTypes() {
       pts: [],
       dts: []
     };
-    program.pts = _this2.streams[program.type].pts;
-    program.dts = _this2.streams[program.type].dts;
+    program.pts = _this2.streams[program.type].peshdr.map(function (hdr) {
+      return hdr.pts;
+    });
+    program.dts = _this2.streams[program.type].peshdr.map(function (hdr) {
+      return hdr.dts;
+    });
     _this2.packets.forEach(function (p) {
       if (p.pid === program.id) {
         program.packets++;
@@ -654,7 +882,9 @@ TSPrograms.prototype.getDataStream = function getDataStream(type) {
   var buffer = new ArrayBuffer(this.streams[type].payload.length);
   var dataStream = {
     data: new Uint8Array(buffer),
-    size: this.streams[type].payload.length
+    size: this.streams[type].payload.length,
+    id: this.streams[type].id,
+    pes: this.streams[type].peshdr
   };
   dataStream.data.set(this.streams[type].payload);
 
@@ -663,18 +893,34 @@ TSPrograms.prototype.getDataStream = function getDataStream(type) {
 
 module.exports = TSPrograms;
 
-},{"logplease":18}],7:[function(require,module,exports){
+},{"logplease":21}],9:[function(require,module,exports){
+(function (Buffer){
 "use strict";
+
+// Copyright 2017 Eyevinn Technology. All rights reserved
+// Use of this source code is governed by a MIT License
+// license that can be found in the LICENSE file.
+// Author: Jonas Birme (Eyevinn Technology)
+var hexy = require("hexy");
 
 var util = {
   toHex: function toHex(d) {
     return "0x" + d.toString(16);
+  },
+  hexDump: function hexDump(array) {
+    var buf = new Buffer(array.byteLength);
+    var view = new Uint8Array(array);
+    for (var i = 0; i < buf.length; i++) {
+      buf[i] = view[i];
+    }
+    return hexy.hexy(buf);
   }
 };
 
 module.exports = util;
 
-},{}],8:[function(require,module,exports){
+}).call(this,require("buffer").Buffer)
+},{"buffer":13,"hexy":16}],10:[function(require,module,exports){
 'use strict';
 
 exports.byteLength = byteLength;
@@ -790,9 +1036,9 @@ function fromByteArray(uint8) {
   return parts.join('');
 }
 
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -904,7 +1150,7 @@ exports.allocUnsafeSlow = function allocUnsafeSlow(size) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"buffer":11}],11:[function(require,module,exports){
+},{"buffer":13}],13:[function(require,module,exports){
 (function (global){
 /*!
  * The buffer module from node.js, for the browser.
@@ -2697,7 +2943,7 @@ function isnan (val) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"base64-js":8,"ieee754":14,"isarray":17}],12:[function(require,module,exports){
+},{"base64-js":10,"ieee754":17,"isarray":20}],14:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -2808,7 +3054,7 @@ function objectToString(o) {
 }
 
 }).call(this,{"isBuffer":require("../../is-buffer/index.js")})
-},{"../../is-buffer/index.js":16}],13:[function(require,module,exports){
+},{"../../is-buffer/index.js":19}],15:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3112,7 +3358,379 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
+(function (Buffer){
+'use strict';
+
+// # hexy.js -- utility to create hex dumps 
+// 
+// `hexy` is a javascript library that's easy to use to create hex dumps. It
+// works well in node and has cursory browser (more below) support. It contains a
+// number of options to configure how the hex dump will end up looking.
+// 
+// It should create a pleasant looking hex dumb by default:
+//     
+//     var hexy = require('hexy'),
+//            b = new Buffer("\000\001\003\005\037\012\011bcdefghijklmnopqrstuvwxyz0123456789")
+//             // or String or Array containing numbers ( bytes, i.e. < 0xFF )
+//     
+//     console.log(hexy.hexy(b))
+// 
+// results in this dump:
+// 
+//     00000000: 0001 0305 1f0a 0962 6364 6566 6768 696a  .......bcdefghij
+//     00000010: 6b6c 6d6e 6f70 7172 7374 7576 7778 797a  klmnopqrstuvwxyz
+//     00000020: 3031 3233 3435 3637 3839                 0123456789
+// 
+// but it's also possible to configure:
+// 
+//   * Line numbering
+//   * Line width
+//   * Format of byte grouping
+//   * Case of hex decimals
+//   * Presence of the ASCII annotation in the right column.
+// 
+// This means it's easy to generate exciting dumps like:
+// 
+//     0000000: 0001 0305 1f0a 0962  .... ...b 
+//     0000008: 6364 6566 6768 696a  cdef ghij 
+//     0000010: 6b6c 6d6e 6f70 7172  klmn opqr 
+//     0000018: 7374 7576 7778 797a  stuv wxyz 
+//     0000020: 3031 3233 3435 3637  0123 4567 
+//     0000028: 3839                 89
+// 
+// or even:
+// 
+//     0000000: 00 01 03 05 1f 0a 09 62   63 64 65 66 67 68 69 6a 
+//     0000010: 6b 6c 6d 6e 6f 70 71 72   73 74 75 76 77 78 79 7a 
+//     0000020: 30 31 32 33 34 35 36 37   38 39
+// 
+// with hexy!
+// 
+// ## Accepted Input
+// 
+// Currently, input should be one of the following:
+// 
+//   - a `Buffer`
+//   - a `String`
+//   - an `Array` containing `Number`s. These should fit into
+//     8 bits, i.e. be smaller than 255. Larger values are truncated
+//     (specifically `val & 0xff`)
+// 
+// ## Formatting Options
+// 
+// Formatting options are configured by passing a `format` object to the `hexy` function:
+// 
+//     var format = {}
+//         format.width = width // how many bytes per line, default 16
+//         format.numbering = n // ["hex_bytes" | "none"],  default "hex_bytes"
+//         format.format = f    // ["fours"|"twos"|"none"], how many nibbles per group
+//                              //                          default "fours"
+//         format.caps = c      // ["lower"|"upper"],       default lower
+//         format.annotate=a    // ["ascii"|"none"], ascii annotation at end of line?
+//                              //                          default "ascii"
+//         format.prefix=p      // <string> something pretty to put in front of each line
+//                              //                          default ""
+//         format.indent=i      // <num> number of spaces to indent
+//                              //                          default 0
+//         format.html=true     // funky html divs 'n stuff! experimental.
+//                              //                          default: false
+// 
+//     console.log(hexy.hexy(buffer, format))
+// 
+// In case you're really nerdy, you'll have noticed that the defaults correspond
+// to how `xxd` formats it's output.
+//            
+// 
+// ## Installing
+// 
+// Either use `npm`:
+//   
+//     npm install hexy
+// 
+// This will install the lib which you'll be able to use like so:
+//     
+//     var hexy = require("hexy"),
+//         buf  = // get Buffer from somewhere,
+//         str  = hexy.hexy(buf)
+// 
+// It will also install `hexy` into your path in case you're totally fed up
+// with using `xxd`.
+//         
+//  
+// If you don't like `npm`, grab the source from github:
+// 
+//     http://github.com/a2800276/hexy.js
+// 
+// ## Browser Support
+// 
+// Basically eveything should work fine in the browser as well, just
+// include hexy.js in a script tag, and you'll get `hexy` and `Hexy` stuck
+// to the global object (window).
+// 
+// Some caveats: "Works fine on my system™". Browser support is 'new' and
+// not thoroughly tested (... eh, only on chrome [Version: whatever I'm
+// currently running]). Under node, I can generally assume that binary data
+// is passed in in a sane fashion using buffers, but plain old Javascript
+// doesn't really have any datatypes that can handle bytes gracefully.
+// Currently only Strings and arrays containing Number'ish values are
+// supported, I'd like to add numeric and typed arrays more explicitly.
+// 
+// Let me know in case you run into any issues, I'd be happy to find out
+// about them.
+// 
+// ## TODOS
+// 
+// The current version only pretty prints node.js Buffers, and JS Strings
+// and Arrays. This should be expanded to also do typed arrays,
+// Streams/series of Buffers which would be nice so you don't have to
+// collect the whole things you want to pretty print in memory, and such.
+// 
+// I'd like to improve html rendering, e.g. to be able to mouse over the
+// ascii annotation and highlight the hex byte and vice versa, improve
+// browser integration and set up a proper build & packaging system.
+// 
+// Better testing for browser use.
+// 
+//  
+// ## Thanks
+// 
+// * Thanks to Isaac Schlueter [isaacs] for gratiously lending a hand and
+// cheering me up.
+// * dodo (http://coderwall.com/dodo)
+// * the fine folks at [Travis](http://travis-ci.org/a2800276/hexy.js)
+// * radare (https://github.com/radare)
+// * Michele Caini (https://github.com/skypjack)
+// 
+// ## History
+// 
+// This is a fairly straightforward port of `hexy.rb` which does more or less the
+// same thing. You can find it here: 
+//  
+//     http://github.com/a2800276/hexy
+//  
+// in case these sorts of things interest you.
+// 
+// ## Mail
+// 
+// In case you discover bugs, spelling errors, offer suggestions for
+// improvements or would like to help out with the project, you can contact
+// me directly (tim@kuriositaet.de). 
+
+(function (arg) {
+
+  var hexy = function hexy(buffer, config) {
+    var h = new Hexy(buffer, config);
+    return h.toString();
+  };
+
+  var Hexy = function Hexy(buffer, config) {
+    var self = this;
+
+    if (typeof Buffer !== 'undefined') {
+      buffer = Buffer.isBuffer(buffer) && buffer || typeof buffer === 'string' && new Buffer(buffer) || buffer && buffer.constructor === Array && new Buffer(buffer) // accept num arrays
+      || new Buffer(0);
+    }
+    buffer = buffer || [];
+    config = config || {};
+
+    self.buffer = buffer; // magic string conversion here?
+    self.width = config.width || 16;
+    self.numbering = config.numbering == "none" ? "none" : "hex_bytes";
+
+    switch (config.format) {
+      case "none":
+      case "twos":
+        self.format = config.format;
+        break;
+      default:
+        self.format = "fours";
+    }
+
+    self.caps = config.caps == "upper" ? "upper" : "lower";
+    self.annotate = config.annotate == "none" ? "none" : "ascii";
+    self.prefix = config.prefix || "";
+    self.indent = config.indent || 0;
+    self.html = config.html || false;
+    self.offset = config.offset || 0;
+    self.length = config.length || -1;
+
+    self.display_offset = config.display_offset || 0;
+
+    if (self.offset) {
+      if (self.offset < self.buffer.length) {
+        self.buffer = self.buffer.slice(self.offset);
+      }
+    }
+
+    if (self.length !== -1) {
+      if (self.length <= self.buffer.length) {
+        self.buffer = self.buffer.slice(0, self.length);
+      }
+    }
+
+    for (var i = 0; i != self.indent; ++i) {
+      self.prefix = " " + self.prefix;
+    }
+
+    var pos = 0;
+
+    this.toString = function () {
+      var str = "";
+
+      if (self.html) {
+        str += "<div class='hexy'>\n";
+      }
+      //split up into line of max `self.width`
+      var line_arr = lines();
+
+      //lines().forEach(function(hex_raw, i)
+      for (var i = 0; i != line_arr.length; ++i) {
+        var hex_raw = line_arr[i],
+            hex = hex_raw[0],
+            raw = hex_raw[1];
+        //insert spaces every `self.format.twos` or fours
+        var howMany = hex.length;
+        if (self.format === "fours") {
+          howMany = 4;
+        } else if (self.format === "twos") {
+          howMany = 2;
+        }
+
+        var hex_formatted = "";
+
+        for (var j = 0; j < hex.length; j += howMany) {
+          var s = hex.substr(j, howMany);
+          hex_formatted += s + " ";
+        }
+
+        var addr = i * self.width + self.offset + self.display_offset;
+        if (self.html) {
+          odd = i % 2 == 0 ? " even" : "  odd";
+          str += "<div class='" + pad(addr, 8) + odd + "'>";
+        }
+        str += self.prefix;
+
+        if (self.numbering === "hex_bytes") {
+          str += pad(addr, 8); // padding...
+          str += ": ";
+        }
+
+        var padlen = 0;
+        switch (self.format) {
+          case "fours":
+            padlen = self.width * 2 + self.width / 2;
+            break;
+          case "twos":
+            padlen = self.width * 3 + 2;
+            break;
+          default:
+            padlen = self.width * 2 + 1;
+        }
+
+        str += rpad(hex_formatted, padlen);
+        if (self.annotate === "ascii") {
+          str += " ";
+          var ascii = raw.replace(/[\000-\040\177-\377]/g, ".");
+          if (self.html) {
+            str += escape(ascii);
+          } else {
+            str += ascii;
+          }
+        }
+        if (self.html) {
+          str += "</div>\n";
+        } else {
+          str += "\n";
+        }
+      }
+      if (self.html) {
+        str += "</div>\n";
+      }
+      return str;
+    };
+
+    var lines = function lines() {
+      var hex_raw = [];
+      for (var i = 0; i < self.buffer.length; i += self.width) {
+        var begin = i,
+            end = i + self.width >= self.buffer.length ? self.buffer.length : i + self.width,
+            slice = self.buffer.slice(begin, end),
+            hex = self.caps === "upper" ? hexu(slice) : hexl(slice),
+            raw = slice.toString('ascii');
+
+        if (self.buffer.constructor == Array) {
+          raw = String.fromCharCode.apply(self, slice);
+        }
+        hex_raw.push([hex, raw]);
+      }
+      return hex_raw;
+    };
+
+    var hexl = function hexl(buffer) {
+      var str = "";
+      for (var i = 0; i != buffer.length; ++i) {
+        if (buffer.constructor == String) {
+          str += pad(buffer.charCodeAt(i), 2);
+        } else {
+          str += pad(buffer[i], 2);
+        }
+      }
+      return str;
+    };
+    var hexu = function hexu(buffer) {
+      return hexl(buffer).toUpperCase();
+    };
+
+    var pad = function pad(b, len) {
+      var s = b.toString(16);
+
+      while (s.length < len) {
+        s = "0" + s;
+      }
+      return s;
+    };
+    var rpad = function rpad(s, len) {
+      for (var n = len - s.length; n != 0; --n) {
+        if (self.html) {
+          s += "&nbsp;";
+        } else {
+          s += " ";
+        }
+      }
+      return s;
+    };
+
+    var escape = function escape(str) {
+      str = str.split("&").join("&amp;");
+      str = str.split("<").join("&lt;");
+      str = str.split(">").join("&gt;");
+      return str;
+    };
+  };
+
+  // This is probably not the prettiest or coolest way to to determine runtime
+  // environment. It seems to work and Im not up to the task figuring out what
+  // the module system du jour is and how to interface with it ...
+
+  // If anyone wants to fix this to include this module "properly", I'm more than
+  // happy to incorporate any fixes...
+
+  var _exp;
+  if (typeof exports !== "undefined") {
+    _exp = exports;
+  } else if (arg === window) {
+    _exp = window;
+  } else {
+    // who knows?
+    _exp = arg; // or this or somethings. ...
+  }
+  _exp.hexy = hexy;
+  _exp.Hexy = Hexy;
+})(undefined);
+
+}).call(this,require("buffer").Buffer)
+},{"buffer":13}],17:[function(require,module,exports){
 "use strict";
 
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
@@ -3200,7 +3818,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128;
 };
 
-},{}],15:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 'use strict';
 
 if (typeof Object.create === 'function') {
@@ -3227,7 +3845,7 @@ if (typeof Object.create === 'function') {
   };
 }
 
-},{}],16:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 'use strict';
 
 /*!
@@ -3252,7 +3870,7 @@ function isSlowBuffer(obj) {
   return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0));
 }
 
-},{}],17:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 'use strict';
 
 var toString = {}.toString;
@@ -3261,7 +3879,7 @@ module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],18:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -3517,7 +4135,7 @@ module.exports = {
 };
 
 }).call(this,require('_process'))
-},{"_process":20,"events":13,"fs":9,"util":37}],19:[function(require,module,exports){
+},{"_process":23,"events":15,"fs":11,"util":40}],22:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -3562,7 +4180,7 @@ function nextTick(fn, arg1, arg2, arg3) {
 }
 
 }).call(this,require('_process'))
-},{"_process":20}],20:[function(require,module,exports){
+},{"_process":23}],23:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -3744,12 +4362,12 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],21:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 "use strict";
 
 module.exports = require("./lib/_stream_duplex.js");
 
-},{"./lib/_stream_duplex.js":22}],22:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":25}],25:[function(require,module,exports){
 // a duplex stream is just a stream that is both readable and writable.
 // Since JS doesn't have multiple prototypal inheritance, this class
 // prototypally inherits from Readable, and then parasitically from
@@ -3826,7 +4444,7 @@ function forEach(xs, f) {
   }
 }
 
-},{"./_stream_readable":24,"./_stream_writable":26,"core-util-is":12,"inherits":15,"process-nextick-args":19}],23:[function(require,module,exports){
+},{"./_stream_readable":27,"./_stream_writable":29,"core-util-is":14,"inherits":18,"process-nextick-args":22}],26:[function(require,module,exports){
 // a passthrough stream.
 // basically just the most minimal sort of Transform stream.
 // Every written chunk gets output as-is.
@@ -3854,7 +4472,7 @@ PassThrough.prototype._transform = function (chunk, encoding, cb) {
   cb(null, chunk);
 };
 
-},{"./_stream_transform":25,"core-util-is":12,"inherits":15}],24:[function(require,module,exports){
+},{"./_stream_transform":28,"core-util-is":14,"inherits":18}],27:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -4799,7 +5417,7 @@ function indexOf(xs, x) {
 }
 
 }).call(this,require('_process'))
-},{"./_stream_duplex":22,"./internal/streams/BufferList":27,"_process":20,"buffer":11,"buffer-shims":10,"core-util-is":12,"events":13,"inherits":15,"isarray":17,"process-nextick-args":19,"string_decoder/":33,"util":9}],25:[function(require,module,exports){
+},{"./_stream_duplex":25,"./internal/streams/BufferList":30,"_process":23,"buffer":13,"buffer-shims":12,"core-util-is":14,"events":15,"inherits":18,"isarray":20,"process-nextick-args":22,"string_decoder/":36,"util":11}],28:[function(require,module,exports){
 // a transform stream is a readable/writable stream where you do
 // something with the data.  Sometimes it's called a "filter",
 // but that's not a great name for it, since that implies a thing where
@@ -4983,7 +5601,7 @@ function done(stream, er, data) {
   return stream.push(null);
 }
 
-},{"./_stream_duplex":22,"core-util-is":12,"inherits":15}],26:[function(require,module,exports){
+},{"./_stream_duplex":25,"core-util-is":14,"inherits":18}],29:[function(require,module,exports){
 (function (process){
 // A bit simpler than readable streams.
 // Implement an async ._write(chunk, encoding, cb), and it'll handle all
@@ -5541,7 +6159,7 @@ function CorkedRequest(state) {
 }
 
 }).call(this,require('_process'))
-},{"./_stream_duplex":22,"_process":20,"buffer":11,"buffer-shims":10,"core-util-is":12,"events":13,"inherits":15,"process-nextick-args":19,"util-deprecate":34}],27:[function(require,module,exports){
+},{"./_stream_duplex":25,"_process":23,"buffer":13,"buffer-shims":12,"core-util-is":14,"events":15,"inherits":18,"process-nextick-args":22,"util-deprecate":37}],30:[function(require,module,exports){
 'use strict';
 
 var Buffer = require('buffer').Buffer;
@@ -5607,12 +6225,12 @@ BufferList.prototype.concat = function (n) {
   return ret;
 };
 
-},{"buffer":11,"buffer-shims":10}],28:[function(require,module,exports){
+},{"buffer":13,"buffer-shims":12}],31:[function(require,module,exports){
 "use strict";
 
 module.exports = require("./lib/_stream_passthrough.js");
 
-},{"./lib/_stream_passthrough.js":23}],29:[function(require,module,exports){
+},{"./lib/_stream_passthrough.js":26}],32:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -5634,17 +6252,17 @@ if (!process.browser && process.env.READABLE_STREAM === 'disable' && Stream) {
 }
 
 }).call(this,require('_process'))
-},{"./lib/_stream_duplex.js":22,"./lib/_stream_passthrough.js":23,"./lib/_stream_readable.js":24,"./lib/_stream_transform.js":25,"./lib/_stream_writable.js":26,"_process":20}],30:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":25,"./lib/_stream_passthrough.js":26,"./lib/_stream_readable.js":27,"./lib/_stream_transform.js":28,"./lib/_stream_writable.js":29,"_process":23}],33:[function(require,module,exports){
 "use strict";
 
 module.exports = require("./lib/_stream_transform.js");
 
-},{"./lib/_stream_transform.js":25}],31:[function(require,module,exports){
+},{"./lib/_stream_transform.js":28}],34:[function(require,module,exports){
 "use strict";
 
 module.exports = require("./lib/_stream_writable.js");
 
-},{"./lib/_stream_writable.js":26}],32:[function(require,module,exports){
+},{"./lib/_stream_writable.js":29}],35:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -5773,7 +6391,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":13,"inherits":15,"readable-stream/duplex.js":21,"readable-stream/passthrough.js":28,"readable-stream/readable.js":29,"readable-stream/transform.js":30,"readable-stream/writable.js":31}],33:[function(require,module,exports){
+},{"events":15,"inherits":18,"readable-stream/duplex.js":24,"readable-stream/passthrough.js":31,"readable-stream/readable.js":32,"readable-stream/transform.js":33,"readable-stream/writable.js":34}],36:[function(require,module,exports){
 'use strict';
 
 // Copyright Joyent, Inc. and other Node contributors.
@@ -5994,7 +6612,7 @@ function base64DetectIncompleteChar(buffer) {
   this.charLength = this.charReceived ? 3 : 0;
 }
 
-},{"buffer":11}],34:[function(require,module,exports){
+},{"buffer":13}],37:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -6066,7 +6684,7 @@ function config(name) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],35:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -6091,7 +6709,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],36:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 'use strict';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -6100,7 +6718,7 @@ module.exports = function isBuffer(arg) {
   return arg && (typeof arg === 'undefined' ? 'undefined' : _typeof(arg)) === 'object' && typeof arg.copy === 'function' && typeof arg.fill === 'function' && typeof arg.readUInt8 === 'function';
 };
 
-},{}],37:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -6690,4 +7308,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":36,"_process":20,"inherits":35}]},{},[2,1,18]);
+},{"./support/isBuffer":39,"_process":23,"inherits":38}]},{},[2,1,21]);
