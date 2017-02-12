@@ -58,7 +58,12 @@ request.get("http://example.com/seg10.ts")
       
       // Obtain the payload for a program stream
       var avcPayload = parser.getDataStreamByProgramType("avc");
-      
+
+      // where avcPayload.data is a Uint8Array
+      var avcParser = hlsTs.createAvcParser(avcPayload);
+
+      // Obtain NAL units
+      var nalUnits = avcParser.getNalUnits();
     }).catch(function(err) { console.error(err.message); }).then(done);
   };
   xhr.open("GET", url);

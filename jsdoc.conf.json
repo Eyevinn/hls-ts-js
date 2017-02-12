@@ -1,0 +1,18 @@
+{
+  "source": {
+    "include": [
+      "README.md",
+      "index.js",
+      "global_exports.js",
+      "lib/browser.js",
+      "lib/parse_stream.js",
+      "lib/pes/pes_parser.js",
+      "lib/pes/pes_avc_parser.js"
+    ]
+  },
+  "opts": {
+    "destination": "./docs/",
+    "template": "node_modules/minami"
+  }
+}
+
