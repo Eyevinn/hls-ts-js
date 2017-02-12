@@ -1,5 +1,6 @@
 const Logger = require("logplease");
 const ParseStream = require("./lib/parse_stream.js");
+const AVCParser = require("./lib/pes/pes_avc_parser.js");
 
 const HlsTS = {
   streamParser: undefined,
@@ -29,7 +30,10 @@ const HlsTS = {
       throw new Error("Nothing parsed yet");
     }
     return this.streamParser.getPrograms().getDataStream(type);    
-  }
+  },
+  createAvcParser(dataStream) {
+    return new AVCParser(dataStream);
+  },
 };
 
 module.exports = HlsTS;

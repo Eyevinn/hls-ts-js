@@ -30,6 +30,10 @@ request.get("http://example.com/seg10.ts")
   const avcPayload = hlsTs.getDataStreamByProgramType("avc");
 
   // where avcPayload.data is a Uint8Array
+  const avcParser = hlsTs.createAvcParser(avcPayload);
+
+  // Obtain NAL units
+  const nalUnits = avcParser.getNalUnits();
 });
 ```
 
