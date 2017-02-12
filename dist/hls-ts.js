@@ -1,6 +1,56 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
 
+/**
+ * @typedef {Object} HlsTsOptions
+ * @property {boolean} debug Output debug informatin to logger
+ */
+
+/**
+ * @typedef {Object} HlsTsProgramType
+ * @property {number} id Program ID
+ * @property {string} type Program type, e.g: avc, aac, id3
+ * @property {number[]} pts List of all PTS values found
+ * @property {number[]} dts List of all DTS values found
+ */
+
+/**
+ * @typedef {Object} HlsTsPacket
+ * @property {number} pid Program ID this packet belongs to
+ * @property {boolean} payloadUnitStartIndicator Payload Unit Start Indicator (PUSI)
+ * @property {number} adaptationFieldControl Adaptation Field Control (ATF)
+ * @property {HlsTsPCR} pcr PCR value
+ */
+
+/**
+ * @typedef {Object} HlsTsDataStream
+ * @property {Uint8Array} data The audio and video data bytes
+ * @property {number} size Amount of data bytes
+ * @property {number} id Program ID
+ * @property {HlsTsPesHeader[]} pes PES Headers for this data stream
+ */
+
+/**
+ * @typedef {Object} HlsTsPCR
+ * @property {number} base PCR base part
+ * @property {number} value PCR value part
+ */
+
+/**
+ * @typedef {Object} HlsTsPesHeader
+ * @property {number} pts PTS value
+ * @property {number} dts DTS value
+ * @property {number} offset Byte offset in data stream where this PES header was found
+ */
+
+/**
+ * @typedef {Object} HlsTsNalUnit
+ * @property {Uint8Array} data The Nal payload
+ * @property {number} type Nal Unit type
+ * @property {number} offset Byte offset in data stream where this Nal Unit was found
+ * @property {HlsTsPesHeader} pes PES Header for this chunk of AVC data 
+ */
+
 window.HlsTs = require("./lib/browser.js");
 
 },{"./lib/browser.js":3}],2:[function(require,module,exports){
@@ -10,8 +60,25 @@ var Logger = require("logplease");
 var ParseStream = require("./lib/parse_stream.js");
 var AVCParser = require("./lib/pes/pes_avc_parser.js");
 
+/** 
+ * @module HlsTs
+ */
+
 var HlsTS = {
   streamParser: undefined,
+  /**
+   * Parse HLS TS when reading from a Stream
+   *
+   * @function parse
+   * @example
+   * fs.createReadStream("./seg-10s.ts")
+   * .pipe(hlsTs.parse({ debug: true }))
+   * .on("finish", function() {
+   *   const avcPayload = hlsTs.getDataStreamByProgramType("avc");
+   * });   
+   * @param {?HlsTsOptions} opts
+   * @return {ParseStream}
+   */
   parse: function parse(opts) {
     if (opts && opts.debug) {
       Logger.setLogLevel("DEBUG");
@@ -21,24 +88,52 @@ var HlsTS = {
     this.streamParser = new ParseStream(opts);
     return this.streamParser;
   },
+  /**
+   * Get the parsed program types
+   * 
+   * @member {HlsTsProgramType[]} programs
+   */
   get programs() {
     if (!this.streamParser) {
       throw new Error("Nothing parsed yet");
     }
     return this.streamParser.getPrograms().getTypes();
   },
+  /**
+   * Get all packets for a specific program type
+   * 
+   * @function getPacketsByProgramType
+   * @param {string} type
+   * @return {HlsTsPacket[]}
+   */
   getPacketsByProgramType: function getPacketsByProgramType(type) {
     if (!this.streamParser) {
       throw new Error("Nothing parsed yet");
     }
     return this.streamParser.getPrograms().getPackets(type);
   },
+
+  /**
+   * Get the data stream for a program type
+   * 
+   * @function getDataStreamByProgramType
+   * @param {string} type
+   * @return {HlsTsDataStream}
+   */
   getDataStreamByProgramType: function getDataStreamByProgramType(type) {
     if (!this.streamParser) {
       throw new Error("Nothing parsed yet");
     }
     return this.streamParser.getPrograms().getDataStream(type);
   },
+
+  /**
+   * Create an AVC Parser that can parse an AVC data stream
+   * 
+   * @function createAvcParser
+   * @param {HlsDataStream} dataStream
+   * @return {AVCParser}
+   */
   createAvcParser: function createAvcParser(dataStream) {
     return new AVCParser(dataStream);
   }
@@ -56,7 +151,20 @@ module.exports = HlsTS;
 
 var Logger = require("logplease");
 var TSParser = require("./tsparser.js");
+var AVCParser = require("./pes/pes_avc_parser.js");
 
+/**
+ * Create an HLS TS parser
+ * 
+ * @example
+ * var parser = new window.HlsTs({ debug: false });
+ * parser.parse(data).then(function() {
+ *   var avcPayload = parser.getDataStreamByProgramType("avc");
+ * });
+ * @constructor
+ * @alias window.HlsTs
+ * @param {?HlsTsOptions} opts
+ */
 var HlsTsBrowser = function constructor(opts) {
   if (opts && opts.debug) {
     Logger.setLogLevel("DEBUG");
@@ -66,6 +174,12 @@ var HlsTsBrowser = function constructor(opts) {
   this.parser = new TSParser();
 };
 
+/**
+ * Parse HLS TS data
+ * 
+ * @param {Uint8Array} data The data to parse
+ * @return {Promise} Resolves when data is parsed
+ */
 HlsTsBrowser.prototype.parse = function parse(data) {
   var _this = this;
 
@@ -79,21 +193,54 @@ HlsTsBrowser.prototype.parse = function parse(data) {
   });
 };
 
+/**
+ * Get the parsed program types
+ * 
+ * @return {HlsTsProgramType[]}
+ */
 HlsTsBrowser.prototype.getPrograms = function () {
   return this.parser.getPrograms().getTypes();
 };
 
+/**
+ * Get all packets for a specific program type
+ * 
+ * @param {string} type Program type e.g: "avc" or "aac"
+ * @return {HlsTsPacket[]}
+ */
 HlsTsBrowser.prototype.getPacketsByProgramType = function (type) {
   return this.parser.getPrograms().getPackets(type);
 };
 
+/**
+ * Get the data stream for a program type
+ * 
+ * @param {string} type Program type e.g: "avc" or "aac"
+ * @return {HlsTsDataStream}
+ */
 HlsTsBrowser.prototype.getDataStreamByProgramType = function (type) {
   return this.parser.getPrograms().getDataStream(type);
 };
 
+/**
+ * Create an AVC Parser that can parse an AVC data stream
+ * 
+ * @example
+ * var parser = new window.HlsTs();
+ * parser.parse(data).then(function() {
+ *   var avcParser = parser.createAvcParser(parser.getDataStreamByProgramType("avc"));
+ *   var nalUnits = avcParser.getNalUnits();
+ * });
+ * @param {HlsTsDataStream} dataStream
+ * @return {AVCParser}
+ */
+HlsTsBrowser.prototype.createAvcParser = function (dataStream) {
+  return new AVCParser(dataStream);
+};
+
 module.exports = HlsTsBrowser;
 
-},{"./tsparser.js":7,"logplease":21}],4:[function(require,module,exports){
+},{"./pes/pes_avc_parser.js":5,"./tsparser.js":7,"logplease":21}],4:[function(require,module,exports){
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -109,6 +256,20 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 var Writable = require("stream").Writable;
 var TSParser = require("./tsparser.js");
+
+/**
+ * Implements the Stream.Writable API to handle
+ * chunk of HLS TS data to be parsed
+ * 
+ * @example
+ * request.get("http://example.com/seg10.ts")
+ * .pipe(hlsTs.parse())  // parse() creates a ParseStream object
+ * .on("finish", function() {
+ *   const avcPackets = hlsTs.getPacketsByProgramType("avc");
+ * });
+ * @class
+ * @extends Writable
+ */
 
 var ParseStream = function (_Writable) {
   _inherits(ParseStream, _Writable);
@@ -213,20 +374,44 @@ var NALUnit = function constructor() {
   };
 };
 
+/**
+ * @class
+ * @extends PESParser
+ */
+
 var PESAVCParser = function (_PESParser) {
   _inherits(PESAVCParser, _PESParser);
 
+  /**
+   * @constructor
+   * @param {HlsTsDataStream} pes Data stream to parse
+   */
   function PESAVCParser(pes) {
     _classCallCheck(this, PESAVCParser);
 
     return _possibleConstructorReturn(this, (PESAVCParser.__proto__ || Object.getPrototypeOf(PESAVCParser)).call(this, pes));
   }
 
+  /**
+   * Translates a Nal Unit type value to a readable string
+   * 
+   * @param {number} type Nal Unit Type
+   * @return {string}
+   */
+
+
   _createClass(PESAVCParser, [{
     key: "nalUnitType",
     value: function nalUnitType(type) {
       return NAL_UNIT_TYPE[type];
     }
+
+    /**
+     * Get all Nal Units in this data stream
+     * 
+     * @return {HlsTsNalUnit[]}
+     */
+
   }, {
     key: "getNalUnits",
     value: function getNalUnits() {
@@ -302,7 +487,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // license that can be found in the LICENSE file.
 // Author: Jonas Birme (Eyevinn Technology)
 
+/**
+ * @class
+ */
 var PESParser = function () {
+  /**
+   * @constructor
+   * @param {HlsTsDataStream} pes Data stream to parse
+   */
   function PESParser(pes) {
     _classCallCheck(this, PESParser);
 
@@ -311,21 +503,50 @@ var PESParser = function () {
     this.id = pes.id;
   }
 
+  /**
+   * Get program ID
+   * 
+   * @return {number} Program ID
+   */
+
+
   _createClass(PESParser, [{
     key: "getId",
     value: function getId() {
       return this.id;
     }
+
+    /**
+     * Get data stream as Uint8 byte array
+     * 
+     * @return {Uint8Array} Data stream
+     */
+
   }, {
     key: "getData",
     value: function getData() {
       return this.data;
     }
+
+    /**
+     * Get PES headers in this data stream
+     * 
+     * @return {HlsTsPesHeader[]}
+     */
+
   }, {
     key: "getHeaders",
     value: function getHeaders() {
       return this.pes;
     }
+
+    /**
+     * Get a PES header at a specific position in the data stream
+     * 
+     * @param {number} offset Position in the data stream
+     * @return {HlsTsPesHeader}
+     */
+
   }, {
     key: "getHeaderForByteOffset",
     value: function getHeaderForByteOffset(offset) {
@@ -547,6 +768,7 @@ TSParser.prototype._parsePackets = function _parsePackets(chunk) {
           if (stream.size > 0) {
             var pes = this._parsePES(stream);
             if (pes) {
+              /* @type {HlsTsPesHeader} */
               var peshdr = {};
               if (pes.pts) {
                 peshdr.pts = pes.pts;
