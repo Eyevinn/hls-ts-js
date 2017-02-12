@@ -11,7 +11,7 @@
     "clean": "rm -rf dist/* docs/*",
     "prebuild": "npm run clean && npm run test && npm run docs",
     "build": "browserify index.js global_exports.js node_modules/logplease/src/index.js -o dist/hls-ts.js -t [ babelify --presets es2015 ] && $(npm bin)/uglifyjs dist/hls-ts.js -o dist/hls-ts.min.js",
-    "version": "npm run build && git add -A dist",
+    "version": "npm run build && git add -A dist && git add -A docs",
     "postversion": "git push && git push --tags"
   },
   "author": "Jonas Birme <jonas.birme@eyevinn.se> (http://eyevinn.github.io)",

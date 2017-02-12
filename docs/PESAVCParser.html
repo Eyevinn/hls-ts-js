@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>HlsTs - Documentation</title>
+    <title>PESAVCParser - Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -28,7 +28,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">HlsTs</h1>
+    <h1 class="page-title">PESAVCParser</h1>
     
 
     
@@ -40,6 +40,9 @@
 
 <header>
     
+        <h2>
+        PESAVCParser
+        </h2>
         
     
 </header>
@@ -49,9 +52,143 @@
     
         
 
+    
+
+    <h4 class="name" id="PESAVCParser"><span class="type-signature"></span>new PESAVCParser<span class="signature">(pes)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
         
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>pes</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="global.html#HlsTsDataStream">HlsTsDataStream</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Data stream to parse</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lib_pes_pes_avc_parser.js.html">lib/pes/pes_avc_parser.js</a>, <a href="lib_pes_pes_avc_parser.js.html#line61">line 61</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
     </div>
+
+    
+        <h3 class="subsection-title">Extends</h3>
+
+        
+
+
+    <ul>
+        <li><a href="PESParser.html">PESParser</a></li>
+    </ul>
+
 
     
 
@@ -64,82 +201,6 @@
     
 
     
-        <h3 class="subsection-title">Members</h3>
-
-        
-            
-<h4 class="name" id="~programs"><span class="type-signature">(inner) </span>programs<span class="type-signature"> :Array.&lt;<a href="global.html#HlsTsProgramType">HlsTsProgramType</a>></span></h4>
-
-
-
-
-<div class="description">
-    Get the parsed program types
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type">Array.&lt;<a href="global.html#HlsTsProgramType">HlsTsProgramType</a>></span>
-
-
-        </li>
-    </ul>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line34">line 34</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-    
 
     
         <h3 class="subsection-title">Methods</h3>
@@ -149,14 +210,123 @@
 
     
 
-    <h4 class="name" id="~createAvcParser"><span class="type-signature">(inner) </span>createAvcParser<span class="signature">(dataStream)</span><span class="type-signature"> &rarr; {AVCParser}</span></h4>
+    <h4 class="name" id="getData"><span class="type-signature"></span>getData<span class="signature">()</span><span class="type-signature"> &rarr; {Uint8Array}</span></h4>
 
     
 
 
 
 <div class="description">
-    Create an AVC Parser that can parse an AVC data stream
+    Get data stream as Uint8 byte array
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="PESParser.html#getData">PESParser#getData</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lib_pes_pes_parser.js.html">lib/pes/pes_parser.js</a>, <a href="lib_pes_pes_parser.js.html#line34">line 34</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    Data stream
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Uint8Array</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="getHeaderForByteOffset"><span class="type-signature"></span>getHeaderForByteOffset<span class="signature">(offset)</span><span class="type-signature"> &rarr; {<a href="global.html#HlsTsPesHeader">HlsTsPesHeader</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Get a PES header at a specific position in the data stream
 </div>
 
 
@@ -192,13 +362,13 @@
 
         <tr>
             
-                <td class="name"><code>dataStream</code></td>
+                <td class="name"><code>offset</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">HlsDataStream</span>
+<span class="param-type">number</span>
 
 
             
@@ -208,12 +378,331 @@
 
             
 
-            <td class="description last"></td>
+            <td class="description last">Position in the data stream</td>
         </tr>
 
     
     </tbody>
 </table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="PESParser.html#getHeaderForByteOffset">PESParser#getHeaderForByteOffset</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lib_pes_pes_parser.js.html">lib/pes/pes_parser.js</a>, <a href="lib_pes_pes_parser.js.html#line53">line 53</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="global.html#HlsTsPesHeader">HlsTsPesHeader</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="getHeaders"><span class="type-signature"></span>getHeaders<span class="signature">()</span><span class="type-signature"> &rarr; {Array.&lt;<a href="global.html#HlsTsPesHeader">HlsTsPesHeader</a>>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Get PES headers in this data stream
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="PESParser.html#getHeaders">PESParser#getHeaders</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lib_pes_pes_parser.js.html">lib/pes/pes_parser.js</a>, <a href="lib_pes_pes_parser.js.html#line43">line 43</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array.&lt;<a href="global.html#HlsTsPesHeader">HlsTsPesHeader</a>></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="getId"><span class="type-signature"></span>getId<span class="signature">()</span><span class="type-signature"> &rarr; {number}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Get program ID
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="PESParser.html#getId">PESParser#getId</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lib_pes_pes_parser.js.html">lib/pes/pes_parser.js</a>, <a href="lib_pes_pes_parser.js.html#line25">line 25</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    Program ID
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="getNalUnits"><span class="type-signature"></span>getNalUnits<span class="signature">()</span><span class="type-signature"> &rarr; {Array.&lt;<a href="global.html#HlsTsNalUnit">HlsTsNalUnit</a>>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Get all Nal Units in this data stream
+</div>
+
+
+
+
+
+
+
 
 
 
@@ -249,7 +738,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line71">line 71</a>
+        <a href="lib_pes_pes_avc_parser.js.html">lib/pes/pes_avc_parser.js</a>, <a href="lib_pes_pes_avc_parser.js.html#line85">line 85</a>
     </li></ul></dd>
     
 
@@ -283,7 +772,7 @@
     </dt>
     <dd>
         
-<span class="param-type">AVCParser</span>
+<span class="param-type">Array.&lt;<a href="global.html#HlsTsNalUnit">HlsTsNalUnit</a>></span>
 
 
     </dd>
@@ -298,14 +787,14 @@
 
     
 
-    <h4 class="name" id="~getDataStreamByProgramType"><span class="type-signature">(inner) </span>getDataStreamByProgramType<span class="signature">(type)</span><span class="type-signature"> &rarr; {<a href="global.html#HlsTsDataStream">HlsTsDataStream</a>}</span></h4>
+    <h4 class="name" id="nalUnitType"><span class="type-signature"></span>nalUnitType<span class="signature">(type)</span><span class="type-signature"> &rarr; {string}</span></h4>
 
     
 
 
 
 <div class="description">
-    Get the data stream for a program type
+    Translates a Nal Unit type value to a readable string
 </div>
 
 
@@ -347,417 +836,98 @@
             <td class="type">
             
                 
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Nal Unit Type</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lib_pes_pes_avc_parser.js.html">lib/pes/pes_avc_parser.js</a>, <a href="lib_pes_pes_avc_parser.js.html#line76">line 76</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
 <span class="param-type">string</span>
 
 
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line58">line 58</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="global.html#HlsTsDataStream">HlsTsDataStream</a></span>
-
-
     </dd>
 </dl>
 
     
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="~getPacketsByProgramType"><span class="type-signature">(inner) </span>getPacketsByProgramType<span class="signature">(type)</span><span class="type-signature"> &rarr; {Array.&lt;<a href="global.html#HlsTsPacket">HlsTsPacket</a>>}</span></h4>
-
-    
-
-
-
-<div class="description">
-    Get all packets for a specific program type
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>type</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line45">line 45</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Array.&lt;<a href="global.html#HlsTsPacket">HlsTsPacket</a>></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="~parse"><span class="type-signature">(inner) </span>parse<span class="signature">(opts<span class="signature-attributes">nullable</span>)</span><span class="type-signature"> &rarr; {<a href="ParseStream.html">ParseStream</a>}</span></h4>
-
-    
-
-
-
-<div class="description">
-    Parse HLS TS when reading from a Stream
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>opts</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="global.html#HlsTsOptions">HlsTsOptions</a></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-                    &lt;nullable><br>
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line12">line 12</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="ParseStream.html">ParseStream</a></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-    <h5>Example</h5>
-    
-    <pre class="prettyprint"><code>fs.createReadStream("./seg-10s.ts")
-.pipe(hlsTs.parse({ debug: true }))
-.on("finish", function() {
-  const avcPayload = hlsTs.getDataStreamByProgramType("avc");
-});   </code></pre>
 
 
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>lib/browser.js - Documentation</title>
+    <title>ParseStream - Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -28,111 +28,153 @@
 
 <div id="main">
     
-    <h1 class="page-title">lib/browser.js</h1>
+    <h1 class="page-title">ParseStream</h1>
     
 
     
 
 
 
+
+<section>
+
+<header>
     
-    <section>
-        <article>
-            <pre class="prettyprint source linenums"><code>// Copyright 2017 Eyevinn Technology. All rights reserved
-// Use of this source code is governed by a MIT License
-// license that can be found in the LICENSE file.
-// Author: Jonas Birme (Eyevinn Technology)
+        <h2>
+        ParseStream
+        </h2>
+        
+            <div class="class-description">Implements the Stream.Writable API to handle
+chunk of HLS TS data to be parsed</div>
+        
+    
+</header>
 
-const Logger = require("logplease");
-const TSParser = require("./tsparser.js");
-const AVCParser = require("./pes/pes_avc_parser.js");
+<article>
+    <div class="container-overview">
+    
+        
 
-/**
- * Create an HLS TS parser
- * 
- * @example
- * var parser = new window.HlsTs({ debug: false });
- * parser.parse(data).then(function() {
- *   var avcPayload = parser.getDataStreamByProgramType("avc");
- * });
- * @constructor
- * @alias window.HlsTs
- * @param {?HlsTsOptions} opts
- */
-const HlsTsBrowser = function constructor(opts) {
-  if (opts &amp;&amp; opts.debug) {
-    Logger.setLogLevel("DEBUG");            
-  } else {
-    Logger.setLogLevel("INFO");
-  }
-  this.parser = new TSParser();
-};
+    
+    <h2>Constructor</h2>
+    
 
-/**
- * Parse HLS TS data
- * 
- * @param {Uint8Array} data The data to parse
- * @return {Promise} Resolves when data is parsed
- */
-HlsTsBrowser.prototype.parse = function parse(data) {
-  return new Promise((resolve, reject) => {
-    if (this.parser.isValidChunk(data)) {
-      this.parser.push(data, false);
-      resolve();
-    } else {
-      reject("Not a valid TS chunk");
-    }
-  });
-};
+    <h4 class="name" id="ParseStream"><span class="type-signature"></span>new ParseStream<span class="signature">()</span><span class="type-signature"></span></h4>
 
-/**
- * Get the parsed program types
- * 
- * @return {HlsTsProgramType[]}
- */
-HlsTsBrowser.prototype.getPrograms = function() {
-  return this.parser.getPrograms().getTypes();
-};
+    
 
-/**
- * Get all packets for a specific program type
- * 
- * @param {string} type Program type e.g: "avc" or "aac"
- * @return {HlsTsPacket[]}
- */
-HlsTsBrowser.prototype.getPacketsByProgramType = function(type) {
-  return this.parser.getPrograms().getPackets(type);    
-};
 
-/**
- * Get the data stream for a program type
- * 
- * @param {string} type Program type e.g: "avc" or "aac"
- * @return {HlsTsDataStream}
- */
-HlsTsBrowser.prototype.getDataStreamByProgramType = function(type) {
-  return this.parser.getPrograms().getDataStream(type);    
-};
 
-/**
- * Create an AVC Parser that can parse an AVC data stream
- * 
- * @example
- * var parser = new window.HlsTs();
- * parser.parse(data).then(function() {
- *   var avcParser = parser.createAvcParser(parser.getDataStreamByProgramType("avc"));
- *   var nalUnits = avcParser.getNalUnits();
- * });
- * @param {HlsTsDataStream} dataStream
- * @return {AVCParser}
- */
-HlsTsBrowser.prototype.createAvcParser = function(dataStream) {
-  return new AVCParser(dataStream);
-}
 
-module.exports = HlsTsBrowser;</code></pre>
-        </article>
-    </section>
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lib_parse_stream.js.html">lib/parse_stream.js</a>, <a href="lib_parse_stream.js.html#line22">line 22</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>request.get("http://example.com/seg10.ts")
+.pipe(hlsTs.parse())  // parse() creates a ParseStream object
+.on("finish", function() {
+  const avcPackets = hlsTs.getPacketsByProgramType("avc");
+});</code></pre>
+
+
+
+    
+    </div>
+
+    
+        <h3 class="subsection-title">Extends</h3>
+
+        
+
+
+    <ul>
+        <li>Writable</li>
+    </ul>
+
+
+    
+
+    
+
+    
+
+     
+
+    
+
+    
+
+    
+
+    
+
+    
+</article>
+
+</section>
 
 
 

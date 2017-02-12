@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>lib/browser.js - Documentation</title>
+    <title>lib/parse_stream.js - Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -28,7 +28,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">lib/browser.js</h1>
+    <h1 class="page-title">lib/parse_stream.js</h1>
     
 
     
@@ -43,94 +43,49 @@
 // license that can be found in the LICENSE file.
 // Author: Jonas Birme (Eyevinn Technology)
 
-const Logger = require("logplease");
+const Writable = require("stream").Writable;
 const TSParser = require("./tsparser.js");
-const AVCParser = require("./pes/pes_avc_parser.js");
 
 /**
- * Create an HLS TS parser
+ * Implements the Stream.Writable API to handle
+ * chunk of HLS TS data to be parsed
  * 
  * @example
- * var parser = new window.HlsTs({ debug: false });
- * parser.parse(data).then(function() {
- *   var avcPayload = parser.getDataStreamByProgramType("avc");
+ * request.get("http://example.com/seg10.ts")
+ * .pipe(hlsTs.parse())  // parse() creates a ParseStream object
+ * .on("finish", function() {
+ *   const avcPackets = hlsTs.getPacketsByProgramType("avc");
  * });
- * @constructor
- * @alias window.HlsTs
- * @param {?HlsTsOptions} opts
+ * @class
+ * @extends Writable
  */
-const HlsTsBrowser = function constructor(opts) {
-  if (opts &amp;&amp; opts.debug) {
-    Logger.setLogLevel("DEBUG");            
-  } else {
-    Logger.setLogLevel("INFO");
+class ParseStream extends Writable {
+  constructor(opts) {
+    super(opts);
+    this.parser = new TSParser();
+    this.firstChunk = true;
   }
-  this.parser = new TSParser();
-};
-
-/**
- * Parse HLS TS data
- * 
- * @param {Uint8Array} data The data to parse
- * @return {Promise} Resolves when data is parsed
- */
-HlsTsBrowser.prototype.parse = function parse(data) {
-  return new Promise((resolve, reject) => {
-    if (this.parser.isValidChunk(data)) {
-      this.parser.push(data, false);
-      resolve();
-    } else {
-      reject("Not a valid TS chunk");
-    }
-  });
-};
-
-/**
- * Get the parsed program types
- * 
- * @return {HlsTsProgramType[]}
- */
-HlsTsBrowser.prototype.getPrograms = function() {
-  return this.parser.getPrograms().getTypes();
-};
-
-/**
- * Get all packets for a specific program type
- * 
- * @param {string} type Program type e.g: "avc" or "aac"
- * @return {HlsTsPacket[]}
- */
-HlsTsBrowser.prototype.getPacketsByProgramType = function(type) {
-  return this.parser.getPrograms().getPackets(type);    
-};
-
-/**
- * Get the data stream for a program type
- * 
- * @param {string} type Program type e.g: "avc" or "aac"
- * @return {HlsTsDataStream}
- */
-HlsTsBrowser.prototype.getDataStreamByProgramType = function(type) {
-  return this.parser.getPrograms().getDataStream(type);    
-};
-
-/**
- * Create an AVC Parser that can parse an AVC data stream
- * 
- * @example
- * var parser = new window.HlsTs();
- * parser.parse(data).then(function() {
- *   var avcParser = parser.createAvcParser(parser.getDataStreamByProgramType("avc"));
- *   var nalUnits = avcParser.getNalUnits();
- * });
- * @param {HlsTsDataStream} dataStream
- * @return {AVCParser}
- */
-HlsTsBrowser.prototype.createAvcParser = function(dataStream) {
-  return new AVCParser(dataStream);
 }
 
-module.exports = HlsTsBrowser;</code></pre>
+ParseStream.prototype.getPrograms = function getPrograms() {
+  return this.parser.getPrograms();
+}
+
+ParseStream.prototype._write = function(chunk, encoding, next) {
+  // Parse data
+  //console.log("_write:" + chunk.length);
+  let err;
+  this.firstChunk = false;
+  if (this.firstChunk) {
+    if (!this.parser.isValidChunk(chunk)) {
+      err = new Error("Invalid TS chunk");
+    }
+  }
+  this.parser.push(chunk, false);
+  next(err);
+};
+
+module.exports = ParseStream;</code></pre>
         </article>
     </section>
 
