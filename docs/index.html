@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Home - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="window.HlsTs.html">HlsTs</a><ul class='methods'><li data-type='method'><a href="window.HlsTs.html#createAvcParser">createAvcParser</a></li><li data-type='method'><a href="window.HlsTs.html#getDataStreamByProgramType">getDataStreamByProgramType</a></li><li data-type='method'><a href="window.HlsTs.html#getPacketsByProgramType">getPacketsByProgramType</a></li><li data-type='method'><a href="window.HlsTs.html#getPrograms">getPrograms</a></li><li data-type='method'><a href="window.HlsTs.html#parse">parse</a></li></ul></li></ul><h3>Modules</h3><ul><li><a href="module-HlsTs.html">HlsTs</a><ul class='methods'><li data-type='method'><a href="module-HlsTs.html#~createAvcParser">createAvcParser</a></li><li data-type='method'><a href="module-HlsTs.html#~getDataStreamByProgramType">getDataStreamByProgramType</a></li><li data-type='method'><a href="module-HlsTs.html#~getPacketsByProgramType">getPacketsByProgramType</a></li><li data-type='method'><a href="module-HlsTs.html#~parse">parse</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+</nav>
+
+<div id="main">
+    
+
+    
+
+
+
+    
+
+
+
+
+
+
+
+
+
+    
+
+
+    <section class="readme">
+        <article><p><a href="https://travis-ci.org/Eyevinn/hls-ts-js"><img src="https://travis-ci.org/Eyevinn/hls-ts-js.svg?branch=master" alt="Build Status"></a>
+<a href="https://coveralls.io/github/Eyevinn/hls-ts-js?branch=master"><img src="https://coveralls.io/repos/github/Eyevinn/hls-ts-js/badge.svg?branch=master" alt="Coverage Status"></a></p>
+<p>A Javascript library to parse Apple HLS MPEG Transport Stream segments</p>
+<h2>Usage (Node JS)</h2><pre class="prettyprint source"><code>npm install --save hls-ts</code></pre><p>The library implements the <code>Writable</code> stream interface and acts a a &quot;sink&quot;. For example to download
+and parse an HLS MPEG Transport Stream segment:</p>
+<pre class="prettyprint source"><code>const request = require(&quot;request&quot;);
+const hlsTs = require(&quot;hls-ts&quot;);
+
+request.get(&quot;http://example.com/seg10.ts&quot;)
+.pipe(hlsTs.parse())
+.on(&quot;finish&quot;, function() {
+
+  // Obtain all programs found in the Transport Stream
+  const programs = hlsTs.programs;
+
+  // Obtain all packets for a specific program stream
+  const avcPackets = hlsTs.getPacketsByProgramType(&quot;avc&quot;);
+
+  // Obtain the payload for a program stream
+  const avcPayload = hlsTs.getDataStreamByProgramType(&quot;avc&quot;);
+
+  // where avcPayload.data is a Uint8Array
+  const avcParser = hlsTs.createAvcParser(avcPayload);
+
+  // Obtain NAL units
+  const nalUnits = avcParser.getNalUnits();
+});</code></pre><h2>Usage (Browser version)</h2><pre class="prettyprint source"><code>&lt;script src=&quot;dist/hls-ts.min.js&quot;>&lt;/script>
+&lt;script>
+  var xhr = new XMLHttpRequest();
+  var url = &quot;http://example.com/hls/seg-10s.ts&quot;;
+  var parser = new window.HlsTs({ debug: false });
+  xhr.responseType = &quot;arraybuffer&quot;;
+  xhr.onloadend = function() {
+    var buffer = xhr.response;
+    var data = new Uint8Array(buffer);
+    parser.parse(data).then(function() {
+      // Obtain all programs found in the Transport Stream
+      var programs = parser.getPrograms();
+
+      // Obtain all packets for a specific program stream
+      var avcPackets = parser.getPacketsByProgramType(&quot;avc&quot;);
+
+      // Obtain the payload for a program stream
+      var avcPayload = parser.getDataStreamByProgramType(&quot;avc&quot;);
+
+      // where avcPayload.data is a Uint8Array
+      var avcParser = hlsTs.createAvcParser(avcPayload);
+
+      // Obtain NAL units
+      var nalUnits = avcParser.getNalUnits();
+    }).catch(function(err) { console.error(err.message); }).then(done);
+  };
+  xhr.open(&quot;GET&quot;, url);
+  xhr.send();
+&lt;/script></code></pre><h2>Contributing</h2><p>All contributions are welcome but before you submit a Pull Request make sure you follow the same
+code conventions and that you have written unit tests</p></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Sun Feb 12 2017 19:20:25 GMT+0100 (CET) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>

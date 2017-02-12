@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>index.js - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="window.HlsTs.html">HlsTs</a><ul class='methods'><li data-type='method'><a href="window.HlsTs.html#createAvcParser">createAvcParser</a></li><li data-type='method'><a href="window.HlsTs.html#getDataStreamByProgramType">getDataStreamByProgramType</a></li><li data-type='method'><a href="window.HlsTs.html#getPacketsByProgramType">getPacketsByProgramType</a></li><li data-type='method'><a href="window.HlsTs.html#getPrograms">getPrograms</a></li><li data-type='method'><a href="window.HlsTs.html#parse">parse</a></li></ul></li></ul><h3>Modules</h3><ul><li><a href="module-HlsTs.html">HlsTs</a><ul class='methods'><li data-type='method'><a href="module-HlsTs.html#~createAvcParser">createAvcParser</a></li><li data-type='method'><a href="module-HlsTs.html#~getDataStreamByProgramType">getDataStreamByProgramType</a></li><li data-type='method'><a href="module-HlsTs.html#~getPacketsByProgramType">getPacketsByProgramType</a></li><li data-type='method'><a href="module-HlsTs.html#~parse">parse</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">index.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const Logger = require("logplease");
+const ParseStream = require("./lib/parse_stream.js");
+const AVCParser = require("./lib/pes/pes_avc_parser.js");
+
+/**
+ * @typedef {Object} HlsTsOptions
+ * @property {boolean} debug Output debug informatin to logger
+ */
+
+/**
+ * @typedef {Object} HlsTsProgramType
+ * @property {number} id Program ID
+ * @property {string} type Program type, e.g: avc, aac, id3
+ * @property {number[]} pts List of all PTS values found
+ * @property {number[]} dts List of all DTS values found
+ */
+
+/**
+ * @typedef HlsTsPCR
+ * @property {number} base PCR base part
+ * @property {number} value PCR value part
+ */
+
+/**
+ * @typedef {Object} HlsTsPacket
+ * @property {number} pid Program ID this packet belongs to
+ * @property {boolean} payloadUnitStartIndicator Payload Unit Start Indicator (PUSI)
+ * @property {number} adaptationFieldControl Adaptation Field Control (ATF)
+ * @property {HlsTsPCR} pcr PCR value
+ */
+
+/**
+ * @typedef {Object} HlsTsDataStream
+ */
+
+/** 
+ * @module HlsTs
+ */
+
+const HlsTS = {
+  streamParser: undefined,
+  /**
+   * Parse HLS TS when reading from a Stream
+   *
+   * @function parse
+   * @example
+   * fs.createReadStream("./seg-10s.ts")
+   * .pipe(hlsTs.parse({ debug: true }))
+   * .on("finish", function() {
+   *   const avcPayload = hlsTs.getDataStreamByProgramType("avc");
+   * });   
+   * @param {?HlsTsOptions} opts
+   * @return {ParseStream}
+   */
+  parse: function(opts) {
+    if (opts &amp;&amp; opts.debug) {
+      Logger.setLogLevel("DEBUG");            
+    } else {
+      Logger.setLogLevel("INFO");
+    }
+    this.streamParser = new ParseStream(opts);
+    return this.streamParser;
+  },
+  /**
+   * Get the parsed program types
+   * 
+   * @member {HlsTsProgramType[]} programs
+   */
+  get programs() {
+    if (!this.streamParser) {
+      throw new Error("Nothing parsed yet");
+    }
+    return this.streamParser.getPrograms().getTypes();    
+  },
+  /**
+   * Get all packets for a specific program type
+   * 
+   * @function getPacketsByProgramType
+   * @param {string} type
+   * @return {HlsTsPacket[]}
+   */
+  getPacketsByProgramType(type) {
+    if (!this.streamParser) {
+      throw new Error("Nothing parsed yet");
+    }
+    return this.streamParser.getPrograms().getPackets(type);    
+  },
+  /**
+   * Get the data stream for a program type
+   * 
+   * @function getDataStreamByProgramType
+   * @param {string} type
+   * @return {HlsTsDataStream}
+   */
+  getDataStreamByProgramType(type) {
+    if (!this.streamParser) {
+      throw new Error("Nothing parsed yet");
+    }
+    return this.streamParser.getPrograms().getDataStream(type);    
+  },
+  /**
+   * Create an AVC Parser that can parse an AVC data stream
+   * 
+   * @function createAvcParser
+   * @param {HlsDataStream} dataStream
+   * @return {AVCParser}
+   */
+  createAvcParser(dataStream) {
+    return new AVCParser(dataStream);
+  },
+};
+
+module.exports = HlsTS;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Sun Feb 12 2017 19:20:25 GMT+0100 (CET) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>
