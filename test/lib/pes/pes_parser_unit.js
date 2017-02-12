@@ -17,7 +17,7 @@ describe("PES Parser", () => {
       const avcData = hlsTs.getDataStreamByProgramType("avc");
       const pesAvcParser = new PESAVCParser(avcData);
       expect(pesAvcParser.getId()).toBe(224);
-      expect(pesAvcParser.getNalUnits().length).toBe(0);
+      expect(pesAvcParser.getNalUnits().length).toBe(508);
       done(); 
     });
   });

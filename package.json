@@ -37,6 +37,7 @@
     "watchify": "^3.8.0"
   },
   "dependencies": {
+    "hexy": "^0.2.8",
     "logplease": "^1.2.12"
   }
 }
