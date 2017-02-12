@@ -1,6 +1,7 @@
 {
   "source": {
     "include": [
+      "README.md",
       "index.js",
       "lib/browser.js"
     ]

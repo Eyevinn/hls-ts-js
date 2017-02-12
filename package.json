@@ -9,7 +9,7 @@
     "test": "$(npm bin)/karma start karma.conf.js",
     "coveralls": "cat ./coverage/lcov.info | coveralls",
     "clean": "rm -rf dist/* docs/*",
-    "prebuild": "npm run clean && npm run test",
+    "prebuild": "npm run clean && npm run test && npm run docs",
     "build": "browserify index.js global_exports.js node_modules/logplease/src/index.js -o dist/hls-ts.js -t [ babelify --presets es2015 ] && $(npm bin)/uglifyjs dist/hls-ts.js -o dist/hls-ts.min.js",
     "version": "npm run build && git add -A dist",
     "postversion": "git push && git push --tags"

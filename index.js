@@ -8,7 +8,25 @@ const AVCParser = require("./lib/pes/pes_avc_parser.js");
  */
 
 /**
+ * @typedef {Object} HlsTsProgramType
+ * @property {number} id Program ID
+ * @property {string} type Program type, e.g: avc, aac, id3
+ * @property {number[]} pts List of all PTS values found
+ * @property {number[]} dts List of all DTS values found
+ */
+
+/**
+ * @typedef HlsTsPCR
+ * @property {number} base PCR base part
+ * @property {number} value PCR value part
+ */
+
+/**
  * @typedef {Object} HlsTsPacket
+ * @property {number} pid Program ID this packet belongs to
+ * @property {boolean} payloadUnitStartIndicator Payload Unit Start Indicator (PUSI)
+ * @property {number} adaptationFieldControl Adaptation Field Control (ATF)
+ * @property {HlsTsPCR} pcr PCR value
  */
 
 /**
@@ -43,6 +61,11 @@ const HlsTS = {
     this.streamParser = new ParseStream(opts);
     return this.streamParser;
   },
+  /**
+   * Get the parsed program types
+   * 
+   * @member {HlsTsProgramType[]} programs
+   */
   get programs() {
     if (!this.streamParser) {
       throw new Error("Nothing parsed yet");
@@ -50,6 +73,8 @@ const HlsTS = {
     return this.streamParser.getPrograms().getTypes();    
   },
   /**
+   * Get all packets for a specific program type
+   * 
    * @function getPacketsByProgramType
    * @param {string} type
    * @return {HlsTsPacket[]}
@@ -61,6 +86,8 @@ const HlsTS = {
     return this.streamParser.getPrograms().getPackets(type);    
   },
   /**
+   * Get the data stream for a program type
+   * 
    * @function getDataStreamByProgramType
    * @param {string} type
    * @return {HlsTsDataStream}
@@ -71,6 +98,13 @@ const HlsTS = {
     }
     return this.streamParser.getPrograms().getDataStream(type);    
   },
+  /**
+   * Create an AVC Parser that can parse an AVC data stream
+   * 
+   * @function createAvcParser
+   * @param {HlsDataStream} dataStream
+   * @return {AVCParser}
+   */
   createAvcParser(dataStream) {
     return new AVCParser(dataStream);
   },
