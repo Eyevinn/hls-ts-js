@@ -1,0 +1,13 @@
+{
+  "source": {
+    "include": [
+      "index.js",
+      "lib/browser.js"
+    ]
+  },
+  "opts": {
+    "destination": "./docs/",
+    "template": "node_modules/minami"
+  }
+}
+
