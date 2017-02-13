@@ -700,6 +700,7 @@ TSParser.prototype._parsePackets = function _parsePackets(chunk) {
   var pos = 0;
 
   while (pos < len - PACKET_SIZE) {
+    //log.debug(`pos=${pos}, len=${len}`);
     var packet = new Packet();
     if (chunk[pos] === SYNC_BYTE) {
       // Yes we have a valid packet
@@ -738,6 +739,7 @@ TSParser.prototype._parsePackets = function _parsePackets(chunk) {
 
         offset = pos + 5 + packet.atflen;
         if (offset === pos + PACKET_SIZE) {
+          pos += PACKET_SIZE;
           continue;
         }
       } else {
@@ -793,6 +795,7 @@ TSParser.prototype._parsePackets = function _parsePackets(chunk) {
         }
         stream.data.push(chunk.subarray(offset, pos + PACKET_SIZE));
         stream.size += pos + PACKET_SIZE - offset;
+        //log.debug(`${stream.type}: pusi=${packet.pusi}, size=${stream.size}`);
       } else {
         switch (packet.pid) {
           case PAT_ID:
@@ -871,11 +874,13 @@ TSParser.prototype._parsePES = function _parsePES(stream) {
   var payloadStart = 0,
       hdrlen = 0;
 
+  //log.debug(`${stream.type}: size=${stream.size}, prefix=${util.toHex(prefix)}`);
+
   if (prefix === 1) {
     pes.id = fragment[3];
     pes.pkglen = (fragment[4] << 8) + fragment[5];
     if (pes.pkglen && pes.pkglen > stream.size - 6) {
-      var remain = pes.pkglen - stream.size;
+      var remain = pes.pkglen - stream.size + 6;
       //log.debug(`${stream.type}: Incomplete PES package we need to wait for more data (${pes.pkglen}): ${remain} bytes`)
       return null;
     }
@@ -925,6 +930,7 @@ TSParser.prototype._parsePES = function _parsePES(stream) {
   for (var j = 0; j < stream.data.length; j++) {
     fragment = stream.data[j];
     var len = fragment.byteLength;
+    //log.debug(`${stream.type} j=${j}, i=${i}, fragment=${len}, payloadStart=${payloadStart}`);
     if (payloadStart) {
       if (payloadStart > len) {
         payloadStart -= len;
