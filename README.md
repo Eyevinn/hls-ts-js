@@ -60,7 +60,7 @@ request.get("http://example.com/seg10.ts")
       var avcPayload = parser.getDataStreamByProgramType("avc");
 
       // where avcPayload.data is a Uint8Array
-      var avcParser = hlsTs.createAvcParser(avcPayload);
+      var avcParser = parser.createAvcParser(avcPayload);
 
       // Obtain NAL units
       var nalUnits = avcParser.getNalUnits();
