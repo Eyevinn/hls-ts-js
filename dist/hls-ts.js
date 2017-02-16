@@ -336,33 +336,66 @@ var BYTE_STATE = {
 };
 
 var NAL_UNIT_TYPE = {
-  0: "unspecified",
-  1: "slice_layer_without_partitioning_rbsp()",
-  2: "slice_data_partition_a_layer_rbsp()",
-  3: "slice_data_partition_b_layer_rbsp()",
-  4: "slice_data_partition_c_layer_rbsp()",
-  5: "slice_layer_without_partitioning_rbsp()",
-  6: "sei_rbsp()",
-  7: "seq_parameter_set_rbsp()",
-  8: "pic_parameter_set_rbsp()",
-  9: "access_unit_delimiter_rbsp()",
-  10: "end_of_seq_rbsp( )",
-  11: "end_of_stream_rbsp( )",
-  12: "filler_data_rbsp()",
-  13: "seq_parameter_set_extension_rbsp()",
-  14: "prefix_nal_unit_rbsp()",
-  15: "subset_seq_parameter_set_rbsp()",
-  16: "reserved",
-  17: "reserved",
-  18: "reserved",
-  19: "slice_layer_without_partitioning_rbsp()",
-  20: "slice_layer_extension_rbsp()",
-  21: "slice_layer_extension_rbsp() annex I",
-  22: "reserved",
-  23: "reserved",
-  24: "unspecified",
-  28: "unspecified",
-  29: "unspecified"
+  0: "Unspecified",
+  1: "Coded slice of a non-IDR picture",
+  2: "Coded slice data partition A",
+  3: "Coded slice data partition B",
+  4: "Coded slice data partition C",
+  5: "Coded slice of an IDR picture",
+  6: "Supplemental enhancement information (SEI)",
+  7: "Sequence parameter set",
+  8: "Picture parameter set",
+  9: "Access unit delimiter",
+  10: "End of sequence",
+  11: "End of stream",
+  12: "Filler data",
+  13: "Sequence parameter set extension",
+  14: "Prefix NAL unit",
+  15: "Subset sequence parameter set",
+  16: "Depth parameter set",
+  17: "Reserved",
+  18: "Reserved",
+  19: "Coded slice of an auxiliary coded picture without partitioning",
+  20: "Coded slice extension",
+  21: "Coded slice extension for depth view components",
+  22: "Reserved",
+  23: "Reserved",
+  24: "Unspecified",
+  28: "Unspecified",
+  29: "Unspecified"
+};
+
+var NAL_UNIT_CATEGORY = {
+  0: "non-VCL",
+  1: "VCL",
+  2: "VCL",
+  3: "VCL",
+  4: "VCL",
+  5: "VCL",
+  6: "non-VCL",
+  7: "non-VCL",
+  8: "non-VCL",
+  9: "non-VCL",
+  10: "non-VCL",
+  11: "non-VCL",
+  12: "non-VCL",
+  13: "non-VCL",
+  14: "non-VCL",
+  15: "non-VCL",
+  16: "non-VCL",
+  17: "non-VCL",
+  18: "non-VCL",
+  19: "non-VCL",
+  20: "non-VCL",
+  21: "non-VCL",
+  22: "non-VCL",
+  23: "non-VCL",
+  24: "non-VCL",
+  25: "non-VCL",
+  26: "non-VCL",
+  27: "non-VCL",
+  28: "non-VCL",
+  29: "non-VCL"
 };
 
 var NALUnit = function constructor() {
@@ -407,6 +440,19 @@ var PESAVCParser = function (_PESParser) {
     }
 
     /**
+     * Translates a Nal Unit type value to a Nal Unit category
+     * 
+     * @param {number} type Nal Unit Type
+     * @return {string} 
+     */
+
+  }, {
+    key: "nalUnitCategory",
+    value: function nalUnitCategory(type) {
+      return NAL_UNIT_CATEGORY[type];
+    }
+
+    /**
      * Get all Nal Units in this data stream
      * 
      * @return {HlsTsNalUnit[]}
@@ -423,11 +469,12 @@ var PESAVCParser = function (_PESParser) {
       var unitType = void 0;
       var unitStartPos = -1;
 
-      //console.log(util.hexDump(data.slice(0, 100)));
+      //log.debug(util.hexDump(data));
 
       var byte = void 0;
       while (pos < len) {
         byte = data[pos++];
+        //log.debug(`pos=${pos}, byte:`, util.toHex(byte));
         if (state === BYTE_STATE["0-7"]) {
           state = byte ? BYTE_STATE["0-7"] : BYTE_STATE["8-15"];
           continue;
@@ -440,6 +487,7 @@ var PESAVCParser = function (_PESParser) {
           if (byte === 0) {
             state = BYTE_STATE["24-31"];
           } else if (byte === NAL_START_PREFIX) {
+            //log.debug(`Start Prefix at ${pos} unitStartPos=${unitStartPos}`);
             if (unitStartPos >= 0) {
               var unit = new NALUnit();
               unit.data = data.subarray(unitStartPos, pos - state - 1);
@@ -447,12 +495,10 @@ var PESAVCParser = function (_PESParser) {
               unit.offset = unitStartPos - state - 1;
               unit.pes = this.getHeaderForByteOffset(unit.offset);
               units.push(unit);
-              unitStartPos = -1;
-            } else {
-              unitType = data[pos] & 0x1f;
-              unitStartPos = pos;
-              //log.debug(`NAL Type:${NAL_UNIT_TYPE[unitType]} (${unitStartPos})`);
+              log.debug("NAL Type:" + NAL_UNIT_TYPE[unitType] + " (" + unitStartPos + ")");
             }
+            unitType = data[pos] & 0x1f;
+            unitStartPos = pos;
           } else {
             state = BYTE_STATE["0-7"];
           }
