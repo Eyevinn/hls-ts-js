@@ -24,7 +24,7 @@ describe("Hls TS browser library", function() {
         expect(avcPackets.length).toBe(avcProgram.packets);
         expect(avcData.data.length).toBe(879536);
         expect(avcData.size).toBe(avcData.data.length);
-        expect(avcParser.getNalUnits().length).toBe(508);
+        expect(avcParser.getNalUnits().length).toBe(1015);
         done();
       }).catch(function(err) { console.error(err.message); fail(); }).then(done);
     };
