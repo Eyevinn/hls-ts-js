@@ -69,6 +69,14 @@ describe("PES Parser", () => {
       expect(nalUnits[0].type).toBe(7);
       expect(nalUnits[1].type).toBe(8);
       expect(nalUnits[2].type).toBe(5);
+    });
+    it("can get the rbsp from a NAL unit", () => {
+      const mockPayload = hexToBytes(mockNalU);
+      const pesAvcParser = new PESAVCParser({ data: mockPayload, pes: [] });
+      const nalUnits = pesAvcParser.getNalUnits();
+      const rbsp = pesAvcParser.rbspFromNalUnit(nalUnits[0]);
+      expect(rbsp[12]).toBe(0);
+      expect(rbsp[13]).toBe(4);
     });    
     it("can parse payload", (done) => {
       const stream = request.get("http://localhost:9876/base/test/support/testassets/seg-10s.ts");
