@@ -48,4 +48,8 @@
  * @property {HlsTsPesHeader} pes PES Header for this chunk of AVC data 
  */
 
+/**
+ * @typedef {Object} HlsTsNalUnitSPS 
+ */
+
 window.HlsTs = require("./lib/browser.js");
