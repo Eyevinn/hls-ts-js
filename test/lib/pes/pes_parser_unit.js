@@ -8,6 +8,7 @@ const Logger = require("logplease");
 const hlsTs = require("../../../index.js");
 const PESParser = require("../../../lib/pes/pes_parser.js");
 const PESAVCParser = require("../../../lib/pes/pes_avc_parser.js");
+const ExpGolomb = require("../../../lib/pes/exp_golomb.js");
 const util = require("../../../lib/util.js");
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
@@ -94,6 +95,28 @@ describe("PES Parser", () => {
         expect(pesAvcParser.getNalUnits().length).toBe(1015);
         done(); 
       });
+    });
+  });
+  describe("Exp-Golomb decoder", () => {
+    it("can read 6 bits from a two bytes array", () => {
+      const mockData = new Uint8Array(2);
+      mockData[0] = 0x88; // 1000 1000
+      mockData[1] = 0x44; // 0100 0100
+
+      // Expect to have 1,0,0,0,1,0
+      const egData = new ExpGolomb(mockData);
+      const bits = egData.readBits(6);
+      expect(bits).toEqual([1,0,0,0,1,0]);
+    });
+    it("can read 4 bits from a two bytes array and then read 8 more", () => {
+      const mockData = new Uint8Array(2);
+      mockData[0] = 0x88; // 1000 1000
+      mockData[1] = 0x44; // 0100 0100
+      const egData = new ExpGolomb(mockData);
+      const firstBits = egData.readBits(4);
+      const secondBits = egData.readBits(8);
+      expect(firstBits).toEqual([1,0,0,0]);
+      expect(secondBits).toEqual([1,0,0,0,0,1,0,0]);
     });
   });
 });
