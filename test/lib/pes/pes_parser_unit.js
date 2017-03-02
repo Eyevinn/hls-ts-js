@@ -118,6 +118,24 @@ describe("PES Parser", () => {
       expect(firstBits).toEqual([1,0,0,0]);
       expect(secondBits).toEqual([1,0,0,0,0,1,0,0]);
     });
+    it("can read 3 bits from a two bytes array and then read 7 more", () => {
+      const mockData = new Uint8Array(2);
+      mockData[0] = 0x88; // 1000 1000
+      mockData[1] = 0x44; // 0100 0100
+      const egData = new ExpGolomb(mockData);
+      const firstBits = egData.readBits(3);
+      const secondBits = egData.readBits(7);
+      expect(firstBits).toEqual([1,0,0]);
+      expect(secondBits).toEqual([0,1,0,0,0,0,1]);
+    });
+    it("can skip leading zero bits and return the number of zeroes", () => {
+      const mockData = new Uint8Array(2);
+      mockData[0] = 0x00; // 0000 0000
+      mockData[1] = 0x40; // 0100 0000
+      const egData = new ExpGolomb(mockData);
+      const numZeros = egData.skipLeadingZeros();
+      expect(numZeros).toBe(9);
+    });
   });
 });
 
