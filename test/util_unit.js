@@ -18,4 +18,15 @@ describe("Utility functions", () => {
     expect(fiveBits.length).toBe(5);
     expect(fiveBits).toEqual([true, false, true, true, false]);
   });
+  it("can return a value for an array of bits", () => {
+    const bitArray1 = [0, 0, 0, 1];
+    const bitArray2 = [1, 1, 1, 1];
+    const bitArray3 = [1, 0, 0, 1];
+    const val1 = util.bitsToNumber(bitArray1);
+    const val2 = util.bitsToNumber(bitArray2);
+    const val3 = util.bitsToNumber(bitArray3);
+    expect(val1).toBe(1);
+    expect(val2).toBe(15);
+    expect(val3).toBe(1 + 8);
+  });
 });

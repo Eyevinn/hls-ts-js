@@ -136,6 +136,13 @@ describe("PES Parser", () => {
       const numZeros = egData.skipLeadingZeros();
       expect(numZeros).toBe(9);
     });
+    it("can return codenum value", () => {
+      const mockData = new Uint8Array(1);
+      mockData[0] = 0x14; // 0001 0100
+      const egData = new ExpGolomb(mockData);    
+      const codeNum = egData.readCodeNum();
+      expect(codeNum).toBe(9);
+    });
   });
 });
 
