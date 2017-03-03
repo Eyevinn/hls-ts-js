@@ -84,7 +84,18 @@ describe("PES Parser", () => {
       const pesAvcParser = new PESAVCParser({ data: mockPayload, pes: [] });
       const nalUnits = pesAvcParser.getNalUnits();
       const sps = pesAvcParser.spsFromNalUnit(nalUnits[0]);
+      //console.log(sps);
       expect(sps).toBeDefined();
+      expect(sps).toEqual({
+        profileIdc: 100, 
+        levelIdc: 10, 
+        chromaFormatIdc: 1, 
+        picOrderCntType: 6, 
+        maxNumRefFrames: 15, 
+        picWidthInMbs: 0, 
+        picWidthInSamples: 0, 
+        picHeightInMapUnits: 8, 
+        picSizeInMapUnits: 0});
     });    
     it("can parse payload", (done) => {
       const stream = request.get("http://localhost:9876/base/test/support/testassets/seg-10s.ts");
