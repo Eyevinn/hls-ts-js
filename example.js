@@ -1,9 +1,8 @@
 const hlsTs = require("./index.js");
 const fs = require("fs");
-//const PESAVCParser = require("./lib/pes/pes_avc_parser.js");
 
 fs.createReadStream("./test/support/testassets/seg-10s.ts")
-.pipe(hlsTs.parse({ debug: true }))
+.pipe(hlsTs.parse({ debug: false }))
 .on("finish", function() {
   const programs = hlsTs.programs;
   const avcProgram = programs.find(p => p.type === "avc");
@@ -23,6 +22,10 @@ fs.createReadStream("./test/support/testassets/seg-10s.ts")
   console.log(avcNalUnits.length + " AVC NAL units (showing IDR frames)");
   avcNalUnits.filter(nu => nu.type === 5).forEach((nu) => {
     console.log(" - " + avcParser.nalUnitType(nu.type) + ":" + nu.offset + ", pes=" + nu.pes.pts);
+  })
+  avcNalUnits.filter(nu => nu.type === 7).forEach((nu) => {
+    const sps = avcParser.spsFromNalUnit(nu);
+    console.log(sps);
   })
 
 });

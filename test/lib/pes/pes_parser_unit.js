@@ -8,6 +8,7 @@ const Logger = require("logplease");
 const hlsTs = require("../../../index.js");
 const PESParser = require("../../../lib/pes/pes_parser.js");
 const PESAVCParser = require("../../../lib/pes/pes_avc_parser.js");
+const ExpGolomb = require("../../../lib/pes/exp_golomb.js");
 const util = require("../../../lib/util.js");
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
@@ -69,6 +70,39 @@ describe("PES Parser", () => {
       expect(nalUnits[0].type).toBe(7);
       expect(nalUnits[1].type).toBe(8);
       expect(nalUnits[2].type).toBe(5);
+    });
+    it("can get the rbsp from a NAL unit", () => {
+      const mockPayload = hexToBytes(mockNalU);
+      const pesAvcParser = new PESAVCParser({ data: mockPayload, pes: [] });
+      const nalUnits = pesAvcParser.getNalUnits();
+      const rbsp = pesAvcParser.rbspFromNalUnit(nalUnits[0]);
+      expect(rbsp[12]).toBe(0);
+      expect(rbsp[13]).toBe(4);
+    });
+    it("can parse SPS in a NAL unit", () => {
+      const mockPayload = hexToBytes(mockNalU);
+      const pesAvcParser = new PESAVCParser({ data: mockPayload, pes: [] });
+      const nalUnits = pesAvcParser.getNalUnits();
+      const sps = pesAvcParser.spsFromNalUnit(nalUnits[0]);
+      expect(sps).toBeDefined();
+      expect(sps).toEqual({
+        profileIdc: 100, 
+        profileConstraintsFlags: [false, false, false, false, false, false], 
+        levelIdc: 10, 
+        chromaFormatIdc: 1, 
+        bitDepthLuma: 7, 
+        bitDepthChroma: 7, 
+        qpPrimeYZeroTransformBypassFlag: true, 
+        seqScalingMatrixPresentFlag: false, 
+        log2MaxFrameNum: 3, 
+        picOrderCntType: 6, 
+        maxNumRefFrames: 15, 
+        gapsInFrameNumValueAllowedFlag: true, 
+        picWidthInMbs: 0, 
+        picWidthInSamples: 0, 
+        picHeightInMapUnits: 8, 
+        picSizeInMapUnits: 0
+      });
     });    
     it("can parse payload", (done) => {
       const stream = request.get("http://localhost:9876/base/test/support/testassets/seg-10s.ts");
@@ -79,6 +113,83 @@ describe("PES Parser", () => {
         expect(pesAvcParser.getNalUnits().length).toBe(1015);
         done(); 
       });
+    });
+    it("can parse SPS data in a NAL Unit", (done) => {
+      const stream = request.get("http://localhost:9876/base/test/support/testassets/seg-10s.ts");
+      stream.pipe(hlsTs.parse({ debug: false })).on("finish", () => {
+        const avcData = hlsTs.getDataStreamByProgramType("avc");
+        const pesAvcParser = new PESAVCParser(avcData);
+        const nalUnits = pesAvcParser.getNalUnits();
+        const nalSPS = nalUnits.filter(nu => nu.type === 7).map(nu => pesAvcParser.spsFromNalUnit(nu));
+        expect(nalSPS[0]).toEqual({ 
+          profileIdc: 66,
+          profileConstraintsFlags: [ true, true, false, false, false, false ],
+          levelIdc: 21,
+          log2MaxFrameNum: 6,
+          picOrderCntType: 2,
+          maxNumRefFrames: 1,
+          gapsInFrameNumValueAllowedFlag: true,
+          picWidthInMbs: 64,
+          picWidthInSamples: 1024,
+          picHeightInMapUnits: 0,
+          picSizeInMapUnits: 0 
+        });
+        done(); 
+      });
+    });
+  });
+  describe("Exp-Golomb decoder", () => {
+    it("can read 6 bits from a two bytes array", () => {
+      const mockData = new Uint8Array(2);
+      mockData[0] = 0x88; // 1000 1000
+      mockData[1] = 0x44; // 0100 0100
+
+      // Expect to have 1,0,0,0,1,0
+      const egData = new ExpGolomb(mockData);
+      const bits = egData.readBits(6);
+      expect(bits).toEqual([1,0,0,0,1,0]);
+    });
+    it("can read 4 bits from a two bytes array and then read 8 more", () => {
+      const mockData = new Uint8Array(2);
+      mockData[0] = 0x88; // 1000 1000
+      mockData[1] = 0x44; // 0100 0100
+      const egData = new ExpGolomb(mockData);
+      const firstBits = egData.readBits(4);
+      const secondBits = egData.readBits(8);
+      expect(firstBits).toEqual([1,0,0,0]);
+      expect(secondBits).toEqual([1,0,0,0,0,1,0,0]);
+    });
+    it("can read 3 bits from a two bytes array and then read 7 more", () => {
+      const mockData = new Uint8Array(2);
+      mockData[0] = 0x88; // 1000 1000
+      mockData[1] = 0x44; // 0100 0100
+      const egData = new ExpGolomb(mockData);
+      const firstBits = egData.readBits(3);
+      const secondBits = egData.readBits(7);
+      expect(firstBits).toEqual([1,0,0]);
+      expect(secondBits).toEqual([0,1,0,0,0,0,1]);
+    });
+    it("can skip leading zero bits and return the number of zeroes", () => {
+      const mockData = new Uint8Array(2);
+      mockData[0] = 0x00; // 0000 0000
+      mockData[1] = 0x40; // 0100 0000
+      const egData = new ExpGolomb(mockData);
+      const numZeros = egData.skipLeadingZeros();
+      expect(numZeros).toBe(9);
+    });
+    it("can return ue(v) value", () => {
+      const mockData = new Uint8Array(1);
+      mockData[0] = 0x14; // 0001 0100
+      const egData = new ExpGolomb(mockData);    
+      const codeNum = egData.readUE();
+      expect(codeNum).toBe(9);
+    });
+    it("can return se(v) value", () => {
+      const mockData = new Uint8Array(1);
+      mockData[0] = 0x38; // 0011 1000
+      const egData = new ExpGolomb(mockData);    
+      const codeNumSE = egData.readSE();
+      expect(codeNumSE).toBe(-3);
     });
   });
 });

@@ -48,4 +48,31 @@
  * @property {HlsTsPesHeader} pes PES Header for this chunk of AVC data 
  */
 
+/**
+ * @typedef {Object} HlsTsNalUnitSPS
+ * @property {number} profileIdc
+ * @property {boolean[]} profileConstraintsFlags
+ * @property {number} levelIdc
+ * @property {?number} chromaFormatIdc
+ * @property {?boolean} seperateColourPlaneFlag 
+ * @property {?number} bitDepthLuma
+ * @property {?number} bitDepthChroma
+ * @property {?boolean} qpPrimeYZeroTransformBypassFlag
+ * @property {?boolean} seqScalingMatrixPresentFlag
+ * @property {?number} log2MaxFrameNum
+ * @property {?number} picOrderCntType
+ * @property {?number} log2MaxPicOrderCntLsb
+ * @property {?boolean} deltaPicOrderAlwaysZeroFlag
+ * @property {?number} offsetForNonRefPic
+ * @property {?number} offsetForTopToBottomField
+ * @property {?number} numRefFrameInPicOrderCntCycle
+ * @property {?number[]} offsetForRefFrame
+ * @property {number} maxNumRefFrames
+ * @property {boolean} gapsInFrameNumValueAllowedFlag
+ * @property {number} picWidthInMbs
+ * @property {number} picWidthInSamples
+ * @property {number} picHeightInMapUnits
+ * @property {number} picSizeInMapUnits
+ */
+
 window.HlsTs = require("./lib/browser.js");
