@@ -1,6 +1,5 @@
 const hlsTs = require("./index.js");
 const fs = require("fs");
-const PESAVCParser = require("./lib/pes/pes_avc_parser.js");
 
 fs.createReadStream("./test/support/testassets/seg-10s.ts")
 .pipe(hlsTs.parse({ debug: false }))

@@ -114,6 +114,29 @@ describe("PES Parser", () => {
         done(); 
       });
     });
+    it("can parse SPS data in a NAL Unit", (done) => {
+      const stream = request.get("http://localhost:9876/base/test/support/testassets/seg-10s.ts");
+      stream.pipe(hlsTs.parse({ debug: false })).on("finish", () => {
+        const avcData = hlsTs.getDataStreamByProgramType("avc");
+        const pesAvcParser = new PESAVCParser(avcData);
+        const nalUnits = pesAvcParser.getNalUnits();
+        const nalSPS = nalUnits.filter(nu => nu.type === 7).map(nu => pesAvcParser.spsFromNalUnit(nu));
+        expect(nalSPS[0]).toEqual({ 
+          profileIdc: 66,
+          profileConstraintsFlags: [ true, true, false, false, false, false ],
+          levelIdc: 21,
+          log2MaxFrameNum: 6,
+          picOrderCntType: 2,
+          maxNumRefFrames: 1,
+          gapsInFrameNumValueAllowedFlag: true,
+          picWidthInMbs: 64,
+          picWidthInSamples: 1024,
+          picHeightInMapUnits: 0,
+          picSizeInMapUnits: 0 
+        });
+        done(); 
+      });
+    });
   });
   describe("Exp-Golomb decoder", () => {
     it("can read 6 bits from a two bytes array", () => {
