@@ -1,6 +1,6 @@
 {
   "name": "hls-ts",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "HLS TS parser library in Javascript",
   "repository": "https://github.com/Eyevinn/hls-ts-js",
   "main": "index.js",
@@ -9,7 +9,7 @@
     "test": "$(npm bin)/karma start karma.conf.js",
     "coveralls": "cat ./coverage/lcov.info | coveralls",
     "clean": "rm -rf dist/* docs/*",
-    "prebuild": "npm run clean && npm run test && npm run docs",
+    "prebuild": "npm run clean && npm run test",
     "build": "browserify index.js global_exports.js node_modules/logplease/src/index.js -o dist/hls-ts.js -t [ babelify --presets es2015 ] && $(npm bin)/uglifyjs dist/hls-ts.js -o dist/hls-ts.min.js",
     "version": "npm run build && git add -A dist && git add -A docs",
     "postversion": "git push && git push --tags"
