@@ -1,6 +1,6 @@
 {
   "name": "hls-ts",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "HLS TS parser library in Javascript",
   "repository": "https://github.com/Eyevinn/hls-ts-js",
   "main": "index.js",
