@@ -1183,7 +1183,7 @@ TSParser.prototype._parsePackets = function _parsePackets(chunk) {
           this.pmt = this._parsePMT(chunk, offset);
           log.debug(this.pmt);
         }
-      } else if (this.pmt) {
+      } else if (this.pmt && packet.pid >= 32 && packet.pid <= 8186) {
         // log.debug(`PID:${packet.pid}, AAC:${this.pmt.aac}, AVC:${this.pmt.avc}`);
         var stream = void 0;
         if (packet.pid === this.pmt.avc) {
@@ -4642,33 +4642,31 @@ var Logger = function () {
   _createClass(Logger, [{
     key: 'debug',
     value: function debug() {
-      this._write(LogLevels.DEBUG, format.apply(null, arguments));
+      if (this._shouldLog(LogLevels.DEBUG)) this._write(LogLevels.DEBUG, format.apply(null, arguments));
     }
   }, {
     key: 'log',
     value: function log() {
-      this.debug.apply(this, arguments);
+      if (this._shouldLog(LogLevels.DEBUG)) this.debug.apply(this, arguments);
     }
   }, {
     key: 'info',
     value: function info() {
-      this._write(LogLevels.INFO, format.apply(null, arguments));
+      if (this._shouldLog(LogLevels.INFO)) this._write(LogLevels.INFO, format.apply(null, arguments));
     }
   }, {
     key: 'warn',
     value: function warn() {
-      this._write(LogLevels.WARN, format.apply(null, arguments));
+      if (this._shouldLog(LogLevels.WARN)) this._write(LogLevels.WARN, format.apply(null, arguments));
     }
   }, {
     key: 'error',
     value: function error() {
-      this._write(LogLevels.ERROR, format.apply(null, arguments));
+      if (this._shouldLog(LogLevels.ERROR)) this._write(LogLevels.ERROR, format.apply(null, arguments));
     }
   }, {
     key: '_write',
     value: function _write(level, text) {
-      if (!this._shouldLog(level)) return;
-
       if ((this.options.filename || GlobalLogfile) && !this.fileWriter && isNodejs) this.fileWriter = fs.openSync(this.options.filename || GlobalLogfile, this.options.appendFile ? 'a+' : 'w+');
 
       var format = this._format(level, text);
