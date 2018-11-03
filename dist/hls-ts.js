@@ -1067,7 +1067,8 @@ var TSParser = function constructor() {
   this.media = {
     avc: this._initStream("avc"),
     aac: this._initStream("aac"),
-    scte35: this._initStream("scte35")
+    scte35: this._initStream("scte35"),
+    id3: this._initStream("id3")
   };
   this.bufferedData = undefined;
 };
@@ -1192,7 +1193,13 @@ TSParser.prototype._parsePackets = function _parsePackets(chunk) {
           stream = this.media.aac;
         } else if (packet.pid === this.pmt.scte35) {
           stream = this.media.scte35;
+        } else if (packet.pid === this.pmt.id3) {
+          stream = this.media.id3;
+        } else {
+          log.debug("ERROR: No stream for " + packet.pid + " found");
+          log.debug(this.media);
         }
+
         if (packet.pusi) {
           if (stream.size > 0) {
             var pes = this._parsePES(stream);
