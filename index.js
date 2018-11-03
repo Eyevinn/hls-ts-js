@@ -1,6 +1,7 @@
 const Logger = require("logplease");
 const ParseStream = require("./lib/parse_stream.js");
 const AVCParser = require("./lib/pes/pes_avc_parser.js");
+const AACParser = require("./lib/pes/pes_aac_parser.js");
 
 
 /** 
@@ -78,6 +79,16 @@ const HlsTS = {
   createAvcParser(dataStream) {
     return new AVCParser(dataStream);
   },
+  /**
+   * Create an AAC Parser that can parse an AAC data stream
+   * 
+   * @function createAacParser
+   * @param {HlsDataStream} dataStream
+   * @return {AVCParser}
+   */
+  createAacParser(dataStream) {
+    return new AACParser(dataStream);
+  }
 };
 
 module.exports = HlsTS;

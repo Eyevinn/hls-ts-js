@@ -1,10 +1,11 @@
 const hlsTs = require("./index.js");
 const fs = require("fs");
 
-fs.createReadStream("./test/support/testassets/seg-10s.ts")
+fs.createReadStream("./test/support/testassets/2000-00002.ts")
 .pipe(hlsTs.parse({ debug: false }))
 .on("finish", function() {
   const programs = hlsTs.programs;
+  
   const avcProgram = programs.find(p => p.type === "avc");
   console.log("avc:pts:", avcProgram.pts.slice(0, 10).join(":"));
 
@@ -23,9 +24,14 @@ fs.createReadStream("./test/support/testassets/seg-10s.ts")
   avcNalUnits.filter(nu => nu.type === 5).forEach((nu) => {
     console.log(" - " + avcParser.nalUnitType(nu.type) + ":" + nu.offset + ", pes=" + nu.pes.pts);
   })
-  avcNalUnits.filter(nu => nu.type === 7).forEach((nu) => {
-    const sps = avcParser.spsFromNalUnit(nu);
-    console.log(sps);
-  })
 
+  const aacProgram = programs.find(p => p.type === "aac");
+  const aacPackets = hlsTs.getPacketsByProgramType("aac");
+  const aacDataStream = hlsTs.getDataStreamByProgramType("aac");
+  console.log(aacProgram.type + ":" + aacPackets.length + " packets");
+  console.log(aacProgram.type + ":" + aacDataStream.data.length + " bytes");
+  aacParser = hlsTs.createAacParser(aacDataStream);
+  const aacAdtsFrames = aacParser.getAdtsFrames();
+  let frame = aacAdtsFrames[0];
+  console.log(" - MPEG" + frame.mpegVersion + " " + aacParser.audioType(frame.audioObjectType) + " " + frame.channels + "ch (" + frame.samplingRate + "): " + aacAdtsFrames.length + " audio frames, pes=" + frame.pes.pts);
 });
