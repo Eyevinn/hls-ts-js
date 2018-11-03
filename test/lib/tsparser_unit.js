@@ -55,6 +55,16 @@ describe("TS Parser", () => {
     expect(avcData.id).toBe(224);
   });
 
+  it("can parse all test vectors", () => {
+    const assets = [ 'seg-10s', 'seg2-10s', 'ysad01' ];
+    for (let i = 0; i < assets.length; i++) {
+      let asset = testAssetsModule.getAssetByName(assets[i]);
+      let parser = new TSParser();
+      parser.push(asset.data);
+      expect(parser.getPrograms()).not.toBe(null);
+    }
+  });
+
   it("can parse PCR", () => {
     const asset = testAssetsModule.getAssetByName("seg2-10s");
     const parser = new TSParser();

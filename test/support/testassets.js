@@ -36,6 +36,9 @@ TestAssets.prototype.init = function() {
       return loadAsset("seg2-10s.ts");
     }).then((data) => {
       this.assets.push({ name: "seg2-10s", data: data });
+      return loadAsset("ysad01.ts");
+    }).then((data) => {
+      this.assets.push({ name: "ysad01", data: data });
       resolve();
     }).catch((err) => {
       console.error(err);
