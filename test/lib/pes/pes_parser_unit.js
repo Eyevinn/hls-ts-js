@@ -146,7 +146,6 @@ describe("PES Parser", () => {
         const aacData = hlsTs.getDataStreamByProgramType("aac");
         const pesAacParser = new PESAACParser(aacData);
         const adtsFrames = pesAacParser.getAdtsFrames();
-        expect(adtsFrames.length).toBe(291);
         const refFrame = {
           frameStart: adtsFrames[0].frameStart,
           frameEnd: adtsFrames[0].frameEnd,
