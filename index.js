@@ -84,7 +84,7 @@ const HlsTS = {
    * 
    * @function createAacParser
    * @param {HlsDataStream} dataStream
-   * @return {AVCParser}
+   * @return {AACParser}
    */
   createAacParser(dataStream) {
     return new AACParser(dataStream);
