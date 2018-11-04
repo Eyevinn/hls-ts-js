@@ -3,6 +3,9 @@ const fs = require("fs");
 
 fs.createReadStream("./test/support/testassets/2000-00002.ts")
 .pipe(hlsTs.parse({ debug: false }))
+.on("error", function(err) {
+  console.error(err);
+})
 .on("finish", function() {
   const programs = hlsTs.programs;
   
