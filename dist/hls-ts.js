@@ -171,7 +171,7 @@ var HlsTS = {
    * 
    * @function createAacParser
    * @param {HlsDataStream} dataStream
-   * @return {AVCParser}
+   * @return {AACParser}
    */
   createAacParser: function createAacParser(dataStream) {
     return new AACParser(dataStream);
@@ -340,7 +340,11 @@ ParseStream.prototype._write = function (chunk, encoding, next) {
       err = new Error("Invalid TS chunk");
     }
   }
-  this.parser.push(chunk, false);
+  try {
+    this.parser.push(chunk, false);
+  } catch (parserError) {
+    err = new Error("Failed to parse chunk: " + parserError);
+  }
   next(err);
 };
 
