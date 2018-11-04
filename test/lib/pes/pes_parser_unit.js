@@ -8,6 +8,7 @@ const Logger = require("logplease");
 const hlsTs = require("../../../index.js");
 const PESParser = require("../../../lib/pes/pes_parser.js");
 const PESAVCParser = require("../../../lib/pes/pes_avc_parser.js");
+const PESAACParser = require("../../../lib/pes/pes_aac_parser.js");
 const ExpGolomb = require("../../../lib/pes/exp_golomb.js");
 const util = require("../../../lib/util.js");
 
@@ -136,6 +137,52 @@ describe("PES Parser", () => {
         });
         done(); 
       });
+    });
+  });
+  describe("AAC parser", () => {
+    it("can parse payload", done => {
+      const stream = request.get("http://localhost:9876/base/test/support/testassets/2000-00002.ts");
+      stream.pipe(hlsTs.parse({ debug: false })).on("finish", () => {
+        const aacData = hlsTs.getDataStreamByProgramType("aac");
+        const pesAacParser = new PESAACParser(aacData);
+        const adtsFrames = pesAacParser.getAdtsFrames();
+        expect(adtsFrames.length).toBe(291);
+        const refFrame = {
+          frameStart: adtsFrames[0].frameStart,
+          frameEnd: adtsFrames[0].frameEnd,
+          mpegVersion: adtsFrames[0].mpegVersion,
+          crcProtection: adtsFrames[0].crcProtection,
+          audioObjectType: adtsFrames[0].audioObjectType,
+          samplingRate: adtsFrames[0].samplingRate,
+          channels: adtsFrames[0].channels,
+          adtsFrameLength: adtsFrames[0].adtsFrameLength,
+          adtsHeaderLength: adtsFrames[0].adtsHeaderLength,
+          crcLength: adtsFrames[0].crcLength,
+          rawDataBlockStart: adtsFrames[0].rawDataBlockStart,
+          rawDataBlockEnd: adtsFrames[0].rawDataBlockEnd,
+          bufferFullness: adtsFrames[0].bufferFullness,
+          rdbsInFrame: adtsFrames[0].rdbsInFrame,
+          error: adtsFrames[0].error
+        };
+        expect(refFrame).toEqual({
+          frameStart: 0,
+          frameEnd: 297,
+          mpegVersion: 4,
+          crcProtection: false,
+          audioObjectType: 2,
+          samplingRate: 44100,
+          channels: 2,
+          adtsFrameLength: 297,
+          adtsHeaderLength: 7,
+          crcLength: 0,
+          rawDataBlockStart: 7,
+          rawDataBlockEnd: 297,
+          bufferFullness: 118,
+          rdbsInFrame: 0,
+          error: false
+        });
+      });
+      done();
     });
   });
   describe("Exp-Golomb decoder", () => {
