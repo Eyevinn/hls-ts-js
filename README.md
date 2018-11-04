@@ -73,7 +73,7 @@ request.get("http://example.com/seg10.ts")
 
 ## API Documentation
 
-Find API documentation here: http://labs.eyevinn.se/analyzer/docs/index.html
+Find API documentation here: https://inspect.eyevinn.technology/docs/index.html
 
 ## Contributing
 All contributions are welcome but before you submit a Pull Request make sure you follow the same
