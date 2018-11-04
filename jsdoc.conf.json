@@ -7,7 +7,8 @@
       "lib/browser.js",
       "lib/parse_stream.js",
       "lib/pes/pes_parser.js",
-      "lib/pes/pes_avc_parser.js"
+      "lib/pes/pes_avc_parser.js",
+      "lib/pes/pes_aac_parser.js"
     ]
   },
   "opts": {
