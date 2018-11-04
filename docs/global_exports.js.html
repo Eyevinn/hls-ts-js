@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>global_exports.js - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="ParseStream.html">ParseStream</a></li><li><a href="PESAACParser.html">PESAACParser</a><ul class='methods'><li data-type='method'><a href="PESAACParser.html#getAdtsFrames">getAdtsFrames</a></li><li data-type='method'><a href="PESAACParser.html#getData">getData</a></li><li data-type='method'><a href="PESAACParser.html#getHeaderForByteOffset">getHeaderForByteOffset</a></li><li data-type='method'><a href="PESAACParser.html#getHeaders">getHeaders</a></li><li data-type='method'><a href="PESAACParser.html#getId">getId</a></li></ul></li><li><a href="PESAVCParser.html">PESAVCParser</a><ul class='methods'><li data-type='method'><a href="PESAVCParser.html#getData">getData</a></li><li data-type='method'><a href="PESAVCParser.html#getHeaderForByteOffset">getHeaderForByteOffset</a></li><li data-type='method'><a href="PESAVCParser.html#getHeaders">getHeaders</a></li><li data-type='method'><a href="PESAVCParser.html#getId">getId</a></li><li data-type='method'><a href="PESAVCParser.html#getNalUnits">getNalUnits</a></li><li data-type='method'><a href="PESAVCParser.html#nalUnitCategory">nalUnitCategory</a></li><li data-type='method'><a href="PESAVCParser.html#nalUnitType">nalUnitType</a></li><li data-type='method'><a href="PESAVCParser.html#rbspFromNalUnit">rbspFromNalUnit</a></li><li data-type='method'><a href="PESAVCParser.html#spsFromNalUnit">spsFromNalUnit</a></li></ul></li><li><a href="PESParser.html">PESParser</a><ul class='methods'><li data-type='method'><a href="PESParser.html#getData">getData</a></li><li data-type='method'><a href="PESParser.html#getHeaderForByteOffset">getHeaderForByteOffset</a></li><li data-type='method'><a href="PESParser.html#getHeaders">getHeaders</a></li><li data-type='method'><a href="PESParser.html#getId">getId</a></li></ul></li><li><a href="window.HlsTs.html">HlsTs</a><ul class='methods'><li data-type='method'><a href="window.HlsTs.html#createAvcParser">createAvcParser</a></li><li data-type='method'><a href="window.HlsTs.html#getDataStreamByProgramType">getDataStreamByProgramType</a></li><li data-type='method'><a href="window.HlsTs.html#getPacketsByProgramType">getPacketsByProgramType</a></li><li data-type='method'><a href="window.HlsTs.html#getPrograms">getPrograms</a></li><li data-type='method'><a href="window.HlsTs.html#parse">parse</a></li></ul></li></ul><h3>Modules</h3><ul><li><a href="module-HlsTs.html">HlsTs</a><ul class='methods'><li data-type='method'><a href="module-HlsTs.html#~createAacParser">createAacParser</a></li><li data-type='method'><a href="module-HlsTs.html#~createAvcParser">createAvcParser</a></li><li data-type='method'><a href="module-HlsTs.html#~getDataStreamByProgramType">getDataStreamByProgramType</a></li><li data-type='method'><a href="module-HlsTs.html#~getPacketsByProgramType">getPacketsByProgramType</a></li><li data-type='method'><a href="module-HlsTs.html#~parse">parse</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">global_exports.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @typedef {Object} HlsTsOptions
+ * @property {boolean} debug Output debug informatin to logger
+ */
+
+/**
+ * @typedef {Object} HlsTsProgramType
+ * @property {number} id Program ID
+ * @property {string} type Program type, e.g: avc, aac, id3
+ * @property {number[]} pts List of all PTS values found
+ * @property {number[]} dts List of all DTS values found
+ */
+
+/**
+ * @typedef {Object} HlsTsPacket
+ * @property {number} pid Program ID this packet belongs to
+ * @property {boolean} payloadUnitStartIndicator Payload Unit Start Indicator (PUSI)
+ * @property {number} adaptationFieldControl Adaptation Field Control (ATF)
+ * @property {HlsTsPCR} pcr PCR value
+ */
+
+/**
+ * @typedef {Object} HlsTsDataStream
+ * @property {Uint8Array} data The audio and video data bytes
+ * @property {number} size Amount of data bytes
+ * @property {number} id Program ID
+ * @property {HlsTsPesHeader[]} pes PES Headers for this data stream
+ */
+
+/**
+ * @typedef {Object} HlsTsPCR
+ * @property {number} base PCR base part
+ * @property {number} value PCR value part
+ */
+
+/**
+ * @typedef {Object} HlsTsPesHeader
+ * @property {number} pts PTS value
+ * @property {number} dts DTS value
+ * @property {number} offset Byte offset in data stream where this PES header was found
+ */
+
+/**
+ * @typedef {Object} HlsTsNalUnit
+ * @property {Uint8Array} data The Nal payload
+ * @property {number} type Nal Unit type
+ * @property {number} offset Byte offset in data stream where this Nal Unit was found
+ * @property {HlsTsPesHeader} pes PES Header for this chunk of AVC data 
+ */
+
+/**
+ * @typedef {Object} HlsTsNalUnitSPS
+ * @property {number} profileIdc
+ * @property {boolean[]} profileConstraintsFlags
+ * @property {number} levelIdc
+ * @property {?number} chromaFormatIdc
+ * @property {?boolean} seperateColourPlaneFlag 
+ * @property {?number} bitDepthLuma
+ * @property {?number} bitDepthChroma
+ * @property {?boolean} qpPrimeYZeroTransformBypassFlag
+ * @property {?boolean} seqScalingMatrixPresentFlag
+ * @property {?number} log2MaxFrameNum
+ * @property {?number} picOrderCntType
+ * @property {?number} log2MaxPicOrderCntLsb
+ * @property {?boolean} deltaPicOrderAlwaysZeroFlag
+ * @property {?number} offsetForNonRefPic
+ * @property {?number} offsetForTopToBottomField
+ * @property {?number} numRefFrameInPicOrderCntCycle
+ * @property {?number[]} offsetForRefFrame
+ * @property {number} maxNumRefFrames
+ * @property {boolean} gapsInFrameNumValueAllowedFlag
+ * @property {number} picWidthInMbs
+ * @property {number} picWidthInSamples
+ * @property {number} picHeightInMapUnits
+ * @property {number} picSizeInMapUnits
+ */
+
+window.HlsTs = require("./lib/browser.js");</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Nov 04 2018 10:01:48 GMT+0100 (CET) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>

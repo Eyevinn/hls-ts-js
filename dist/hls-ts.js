@@ -783,6 +783,11 @@ var CHANNELS = {
   6: 5.1, // 5.1 ch - (Front: left, center, right)                   (Rear: left,        right, subwoofer)
   7: 7.1 };
 
+/**
+ * @class
+ * @extends PESParser
+ */
+
 var PESAACParser = function (_PESParser) {
   _inherits(PESAACParser, _PESParser);
 
@@ -791,6 +796,13 @@ var PESAACParser = function (_PESParser) {
 
     return _possibleConstructorReturn(this, (PESAACParser.__proto__ || Object.getPrototypeOf(PESAACParser)).call(this, pes));
   }
+
+  /**
+   * Get all ADTS Frames in this data stream
+   * 
+   * @return {AdtsFrame[]}
+   */
+
 
   _createClass(PESAACParser, [{
     key: "getAdtsFrames",
@@ -812,6 +824,7 @@ var PESAACParser = function (_PESParser) {
           byte7 = void 0,
           byte8 = void 0;
       while (pos < len) {
+        var frameStart = pos;
         byte0 = data[pos];
         byte1 = data[pos + 1];
         byte2 = data[pos + 2];
@@ -855,7 +868,7 @@ var PESAACParser = function (_PESParser) {
 
           adtsFrames.push({
             pes: pes,
-            frameStart: pos,
+            frameStart: frameStart,
             frameEnd: rawDataBlockEnd,
             mpegVersion: mpegVersion,
             crcProtection: crcProtection,
@@ -869,7 +882,8 @@ var PESAACParser = function (_PESParser) {
             rawDataBlockEnd: rawDataBlockEnd,
             bufferFullness: bufferFullness,
             rdbsInFrame: rdbsInFrame,
-            error: error
+            error: error,
+            data: data.subarray(rawDataBlockStart, rawDataBlockEnd)
           });
         }
       }

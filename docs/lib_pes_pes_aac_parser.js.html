@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>lib/pes/pes_aac_parser.js - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="ParseStream.html">ParseStream</a></li><li><a href="PESAACParser.html">PESAACParser</a><ul class='methods'><li data-type='method'><a href="PESAACParser.html#getAdtsFrames">getAdtsFrames</a></li><li data-type='method'><a href="PESAACParser.html#getData">getData</a></li><li data-type='method'><a href="PESAACParser.html#getHeaderForByteOffset">getHeaderForByteOffset</a></li><li data-type='method'><a href="PESAACParser.html#getHeaders">getHeaders</a></li><li data-type='method'><a href="PESAACParser.html#getId">getId</a></li></ul></li><li><a href="PESAVCParser.html">PESAVCParser</a><ul class='methods'><li data-type='method'><a href="PESAVCParser.html#getData">getData</a></li><li data-type='method'><a href="PESAVCParser.html#getHeaderForByteOffset">getHeaderForByteOffset</a></li><li data-type='method'><a href="PESAVCParser.html#getHeaders">getHeaders</a></li><li data-type='method'><a href="PESAVCParser.html#getId">getId</a></li><li data-type='method'><a href="PESAVCParser.html#getNalUnits">getNalUnits</a></li><li data-type='method'><a href="PESAVCParser.html#nalUnitCategory">nalUnitCategory</a></li><li data-type='method'><a href="PESAVCParser.html#nalUnitType">nalUnitType</a></li><li data-type='method'><a href="PESAVCParser.html#rbspFromNalUnit">rbspFromNalUnit</a></li><li data-type='method'><a href="PESAVCParser.html#spsFromNalUnit">spsFromNalUnit</a></li></ul></li><li><a href="PESParser.html">PESParser</a><ul class='methods'><li data-type='method'><a href="PESParser.html#getData">getData</a></li><li data-type='method'><a href="PESParser.html#getHeaderForByteOffset">getHeaderForByteOffset</a></li><li data-type='method'><a href="PESParser.html#getHeaders">getHeaders</a></li><li data-type='method'><a href="PESParser.html#getId">getId</a></li></ul></li><li><a href="window.HlsTs.html">HlsTs</a><ul class='methods'><li data-type='method'><a href="window.HlsTs.html#createAvcParser">createAvcParser</a></li><li data-type='method'><a href="window.HlsTs.html#getDataStreamByProgramType">getDataStreamByProgramType</a></li><li data-type='method'><a href="window.HlsTs.html#getPacketsByProgramType">getPacketsByProgramType</a></li><li data-type='method'><a href="window.HlsTs.html#getPrograms">getPrograms</a></li><li data-type='method'><a href="window.HlsTs.html#parse">parse</a></li></ul></li></ul><h3>Modules</h3><ul><li><a href="module-HlsTs.html">HlsTs</a><ul class='methods'><li data-type='method'><a href="module-HlsTs.html#~createAacParser">createAacParser</a></li><li data-type='method'><a href="module-HlsTs.html#~createAvcParser">createAvcParser</a></li><li data-type='method'><a href="module-HlsTs.html#~getDataStreamByProgramType">getDataStreamByProgramType</a></li><li data-type='method'><a href="module-HlsTs.html#~getPacketsByProgramType">getPacketsByProgramType</a></li><li data-type='method'><a href="module-HlsTs.html#~parse">parse</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">lib/pes/pes_aac_parser.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// Copyright 2018 Eyevinn Technology. All rights reserved
+// Use of this source code is governed by a MIT License
+// license that can be found in the LICENSE file.
+// Author: Jonas Birme (Eyevinn Technology)
+
+const PESParser = require("./pes_parser.js");
+const log = require("logplease").create("PESAACParser", { useColors: false });
+const util = require("../util.js");
+
+const SAMPLING_RATES = {
+  0: 96000,  // `0000` - 96000 Hz
+  1: 88200,  // `0001` - 88200 Hz
+  2: 64000,  // `0010` - 64000 Hz
+  3: 48000,  // `0011` - 48000 Hz
+  4: 44100,  // `0100` - 44100 Hz
+  5: 32000,  // `0101` - 32000 Hz
+  6: 24000,  // `0110` - 24000 Hz
+  7: 22050,  // `0111` - 22050 Hz
+  8: 16000,  // `1000` - 16000 Hz
+  9: 12000,  // `1001` - 12000 Hz
+ 10: 11025,  // `1010` - 11025 Hz
+ 11:  8000,  // `1011` - 8000 Hz
+ 12:  7350,  // `1100` - 7350 Hz
+ 13:     0,  // `1101` - Reserved
+ 14:     0,  // `1110` - Reserved
+ 15:     0,  // `1111` - other
+};
+
+const CHANNELS = {
+  0: 0.0,
+  1: 1.0,    //   1 ch - (Front:       center)
+  2: 2.0,    //   2 ch - (Front: left,         right)
+  3: 3.0,    //   3 ch - (Front: left, center, right)
+  4: 4.0,    //   4 ch - (Front: left, center, right)                   (Rear:       center)
+  5: 5.0,    //   5 ch - (Front: left, center, right)                   (Rear: left,        right)
+  6: 5.1,    // 5.1 ch - (Front: left, center, right)                   (Rear: left,        right, subwoofer)
+  7: 7.1,    // 7.1 ch - (Front: left, center, right)(Side: left, right)(Rear: left,        right, subwoofer)
+};
+
+/**
+ * @class
+ * @extends PESParser
+ */
+class PESAACParser extends PESParser {
+  constructor(pes) {
+    super(pes);
+  }
+
+  /**
+   * Get all ADTS Frames in this data stream
+   * 
+   * @return {AdtsFrame[]}
+   */
+  getAdtsFrames() {
+    const data = this.getData();
+    const len = data.byteLength;
+    let pos = 0;
+    let adtsFrames = [];
+
+    //log.debug(util.hexDump(data));
+
+    let byte0, byte1, byte2, byte3, byte4, byte5, byte6, byte7, byte8;
+    while (pos &lt; len) {
+      let frameStart = pos;
+      byte0 = data[pos];
+      byte1 = data[pos + 1];      
+      byte2 = data[pos + 2];      
+      byte3 = data[pos + 3];      
+      byte4 = data[pos + 4];      
+      byte5 = data[pos + 5];      
+      byte6 = data[pos + 6];      
+      byte7 = data[pos + 7];      
+      byte8 = data[pos + 8];      
+      //log.debug(`pos=${pos}, byte:`, util.toHex(byte));
+
+      let syncword = (byte0 === 0xFF) &amp;&amp; ((byte1 &amp; 0xF0) === 0xF0);   // 1111 1111 1111
+      let mpegVersion = (byte1 &amp; 0x08) === 1 ? 2 : 4;                 // 0 == MPEG4, 1 == MPEG2
+      let layer = (byte1 &amp; 0x06) === 0 ? true : false;
+      let crcProtection = (byte1 &amp; 0x01) === 0 ? true : false;        // 0 == HAS CRC, 1 == NO CRC
+      let audioObjectType = ((byte2 &amp; 0xC0) >> 6) + 1;                // 2 == AAC-LC, 5 == HE-AAC, 29 == HE-AAC v2
+      let samplingRate = SAMPLING_RATES[(byte2 &amp; 0x3C) >> 2];         // 0100 == 44100
+      let channels = CHANNELS[((byte2 &amp; 0x01) &lt;&lt; 2 | byte3 &amp; 0xC0) >> 6];  // 2 == LEFT+RIGHT
+
+      let adtsFrameLength = (byte3 &amp; 0x03) &lt;&lt; 11 | byte4 &lt;&lt; 3 | (byte5 &amp; 0xE0) >> 5; // adtsHeaderLength + crcLength + (rawDataBlockEnd - rawDataBlockStart)
+      let bufferFullness  = (byte5 &amp; 0x1f) &lt;&lt; 6  | byte6 >> 2;
+      let rdbsInFrame = (byte6 &amp; 0x03);
+      let adtsHeaderLength = 7;
+      let crcLength  = crcProtection ? 2 : 0;
+      let rawDataBlockStart = pos + adtsHeaderLength;
+      let rawDataBlockEnd = pos + adtsFrameLength;
+      let crc1 = crcProtection ? (((byte7 &lt;&lt; 8) | byte8) >>> 0) : 0;
+      let crc2 = crc1;
+      let error = false;
+
+      if (!syncword || !layer || audioObjectType !== 2) {
+        error = true;
+      }
+      //log.debug(`${pos}: syncword=${syncword}, layer=${layer}, audioObjectType=${audioObjectType}, error=${error}`);
+
+      if (error) {
+        pos++; // skip unknown byte
+      } else {
+        let pes = this.getHeaderForByteOffset(pos);
+        pos += adtsFrameLength;
+
+        adtsFrames.push({
+          pes: pes,
+          frameStart: frameStart,
+          frameEnd: rawDataBlockEnd,
+          mpegVersion: mpegVersion,
+          crcProtection: crcProtection,
+          audioObjectType: audioObjectType,
+          samplingRate: samplingRate,
+          channels: channels,
+          adtsFrameLength: adtsFrameLength,
+          adtsHeaderLength: adtsHeaderLength,
+          crcLength: crcLength,
+          rawDataBlockStart: rawDataBlockStart,
+          rawDataBlockEnd: rawDataBlockEnd,
+          bufferFullness: bufferFullness,
+          rdbsInFrame: rdbsInFrame,
+          error: error,
+          data: data.subarray(rawDataBlockStart, rawDataBlockEnd)
+        });
+      }
+
+    }
+    return adtsFrames;
+  }
+
+  audioType(type) {
+    const mapping = {
+      2: 'AAC-LC',
+      5: 'HE-AAC',
+      29: 'HE-AACv2'
+    };
+    return mapping[type];
+  }
+}
+
+module.exports = PESAACParser;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Nov 04 2018 10:01:48 GMT+0100 (CET) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>
