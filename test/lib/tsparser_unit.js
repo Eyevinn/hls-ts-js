@@ -49,9 +49,9 @@ describe("TS Parser", () => {
     expect(avcPackets.filter(p => p.pcr.base).length).toBe(250);
 
     expect(avcPackets.length).toBe(4931);
-    expect(aacPackets.length).toBe(713);
+    expect(aacPackets.length).toBe(714);
     expect(avcData.size).toBe(879536);
-    expect(aacData.size).toBe(119470);
+    expect(aacData.size).toBe(119733);
     expect(avcData.id).toBe(224);
   });
 
