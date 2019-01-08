@@ -1314,7 +1314,7 @@ TSParser.prototype._parsePackets = function _parsePackets(chunk) {
   var offset = void 0;
   var pos = 0;
 
-  while (pos < len - PACKET_SIZE) {
+  while (pos <= len - PACKET_SIZE) {
     //log.debug(`pos=${pos}, len=${len}`);
     var packet = new Packet();
     if (chunk[pos] === SYNC_BYTE) {
