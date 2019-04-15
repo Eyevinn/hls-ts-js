@@ -111,7 +111,11 @@ describe("PES Parser", () => {
         const avcData = hlsTs.getDataStreamByProgramType("avc");
         const pesAvcParser = new PESAVCParser(avcData);
         expect(pesAvcParser.getId()).toBe(224);
-        expect(pesAvcParser.getNalUnits().length).toBe(1015);
+        const nalUnits = pesAvcParser.getNalUnits();
+        expect(nalUnits.length).toBe(1015);
+        const nalUnitsCodedPictures = nalUnits.filter(nu => nu.type === 1 || nu.type === 5);
+        const nalUnitsCodedPicturesWithPES = nalUnitsCodedPictures.filter(nu => nu.pes !== null);
+        expect(nalUnitsCodedPicturesWithPES.length).toBe(nalUnitsCodedPictures.length);
         done(); 
       });
     });
