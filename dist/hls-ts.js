@@ -1074,9 +1074,9 @@ var PESAVCParser = function (_PESParser) {
       }
       if (unitStartPos >= 0) {
         var _unit = new NALUnit();
-        _unit.data = data.subarray(unitStartPos, pos - state - 1);
+        _unit.data = data.subarray(unitStartPos, pos - state);
         _unit.type = unitType;
-        _unit.offset = unitStartPos - state - 1;
+        _unit.offset = unitStartPos - state;
         _unit.pes = this.getHeaderForByteOffset(_unit.offset);
         units.push(_unit);
       }
@@ -1171,6 +1171,9 @@ var PESParser = function () {
           var _lastPes = this.pes[i - 1];
           return _lastPes;
         }
+      }
+      if (this.pes.length > 0) {
+        return this.pes[this.pes.length - 1];
       }
       return null;
     }
@@ -1292,7 +1295,7 @@ TSParser.prototype.push = function push(chunk, lastChunk) {
 
   if (remainBytes > 0) {
     // We need to buffer this data until we have a complete packet again
-    this.bufferedData = chunk.slice(-remainBytes);
+    this.bufferedData = chunkToParse.slice(-remainBytes);
   }
   log.debug(this.size, this.packets.length, Object.keys(this.media).sort().map(function (type) {
     return _this.media[type].payload.length;
